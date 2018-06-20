@@ -2,10 +2,13 @@ package envoy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	envoyapi "github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -25,9 +28,49 @@ type Envoy interface {
 	WriteConfig(cfg Config)
 	HotRestart()
 }
+
+type EnvoyInstance struct {
+	Done    <-chan error
+	Process *os.Process
+}
+
 type envoy struct {
 	restartEpoch uint
+	glooAddress  string
+	glooPort     uint
 	configDir    string
+
+	cluster string
+	node    string
+	proxyid string
+
+	children []*EnvoyInstance
+
+	configChanged chan struct{}
+	doneInstances chan *EnvoyInstance
+}
+
+func (e *envoy) Run() {
+	for {
+		select {
+		case ei := <-e.doneInstances:
+			e.remove(ei)
+			if len(e.children) == 0 {
+				e.Exit()
+			}
+		case <-e.configChanged:
+			e.startEnvoy()
+		}
+	}
+}
+
+func (e *envoy) remove(ei *EnvoyInstance) {
+	for i := range e.children {
+		if ei == e.children[i] {
+			e.children = append(e.children[:i], e.children[i+1:]...)
+			return
+		}
+	}
 }
 
 func (e *envoy) WriteConfig(cfg Config) error {
@@ -54,18 +97,29 @@ func (e *envoy) WriteConfig(cfg Config) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(e.configDir, "envoy.json"), buf.Bytes(), 0600)
+	err = ioutil.WriteFile(e.getEnvoyConfigPath(), buf.Bytes(), 0600)
 	if err != nil {
 		return err
 	}
 
+	e.configChanged <- struct{}{}
+
 	return nil
+}
+
+func (e *envoy) getEnvoyConfigPath() string {
+	return filepath.Join(e.configDir, "envoy.json")
 }
 
 func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 	var bootstrap envoybootstrap.Bootstrap
 
 	const glooClusterName = "xds_cluster"
+
+	bootstrap.Node = &envoycore.Node{
+		Cluster: e.cluster,
+		Id:      e.node + "." + e.proxyid,
+	}
 
 	// get gloo xds
 	bootstrap.DynamicResources = &envoybootstrap.Bootstrap_DynamicResources{
@@ -100,10 +154,9 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 				Address: &envoycore.Address_SocketAddress{
 					SocketAddress: &envoycore.SocketAddress{
 						Protocol: envoycore.TCP,
-						// TODO
-						Address: "TODO",
+						Address:  e.glooAddress,
 						PortSpecifier: &envoycore.SocketAddress_PortValue{
-							PortValue: 0,
+							PortValue: uint32(e.glooPort),
 						},
 					},
 				},
@@ -126,26 +179,64 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 		},
 	}
 
-	panic("TODO")
 	return bootstrap
 }
 
-func (e *envoy) HotRestart() {
-	e.startEnvoy()
-}
-
-func (e *envoy) startEnvoy() error {
-	// start new envoy and pass the restart epoch
-
-	// TODO add config file
-	envoyCommand := exec.Command("envoy", "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch))
-	err := envoyCommand.Start()
+func (e *envoy) HotRestart() error {
+	ei, err := e.startEnvoy()
 	if err != nil {
 		return err
 	}
 
-	e.restartEpoch++
+	go func() {
+		// TODO: log errors
+		<-ei.Done
+		e.doneInstances <- ei
+	}()
+
+	e.children = append(e.children, ei)
 	return nil
+}
+
+func (e *envoy) Exit() {
+	for _, c := range e.children {
+		c.Process.Signal(syscall.SIGTERM)
+	}
+}
+
+func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
+	// start new envoy and pass the restart epoch
+
+	// TODO add config file
+	envoyCommand := exec.Command("envoy", "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
+	err := envoyCommand.Start()
+	if err != nil {
+		return nil, err
+	}
+
+	envoiddied := make(chan error, 1)
+
+	go func() {
+		defer close(envoiddied)
+		err := envoyCommand.Wait()
+		if err != nil {
+			// envoy died prematuraly :(
+			envoiddied <- err
+		}
+	}()
+
+	// wait for 5 seconds to see if envoy didn't die (i.e. hot restarting failed)
+	select {
+	case err := <-envoiddied:
+		if err == nil {
+			return nil, errors.New("envoy died prematurly")
+		}
+		return nil, err
+	case <-time.After(5 * time.Second):
+	}
+
+	e.restartEpoch++
+	return &EnvoyInstance{Done: envoiddied, Process: envoyCommand.Process}, nil
 }
 
 /*

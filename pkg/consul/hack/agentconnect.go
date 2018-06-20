@@ -4,8 +4,8 @@ type AgentConnect struct {
 	c *Client
 }
 
-func NewAgentConnect(c *Client) AgentConnect {
-	return AgentConnect{c: c}
+func NewAgentConnect(c *Client) *AgentConnect {
+	return &AgentConnect{c: c}
 }
 
 type RootCA struct {
@@ -41,7 +41,7 @@ type ProxyInfo struct {
 	Config            ProxyConfig
 }
 
-func (c *Catalog) doGet(q *QueryOptions, url string, out interface{}) (*QueryMeta, error) {
+func (c *AgentConnect) doGet(q *QueryOptions, url string, out interface{}) (*QueryMeta, error) {
 	r := c.c.newRequest("GET", url)
 	r.setQueryOptions(q)
 	rtt, resp, err := requireOK(c.c.doRequest(r))
@@ -71,7 +71,7 @@ type LeafCertInfo struct {
 	ValidBefore   string
 }
 
-func (c *Catalog) RootCerts(q *QueryOptions) (*RootsInfo, *QueryMeta, error) {
+func (c *AgentConnect) RootCerts(q *QueryOptions) (*RootsInfo, *QueryMeta, error) {
 	var out RootsInfo
 	qm, err := c.doGet(q, "/v1/agent/connect/ca/roots", &out)
 	if err != nil {
@@ -80,8 +80,8 @@ func (c *Catalog) RootCerts(q *QueryOptions) (*RootsInfo, *QueryMeta, error) {
 	return &out, qm, nil
 }
 
-func (c *Catalog) LeafCert(svcname string, q *QueryOptions) (*RootsInfo, *QueryMeta, error) {
-	var out RootsInfo
+func (c *AgentConnect) LeafCert(svcname string, q *QueryOptions) (*LeafCertInfo, *QueryMeta, error) {
+	var out LeafCertInfo
 	qm, err := c.doGet(q, "/v1/agent/connect/ca/leaf/"+svcname, &out)
 	if err != nil {
 		return nil, nil, err
@@ -89,7 +89,7 @@ func (c *Catalog) LeafCert(svcname string, q *QueryOptions) (*RootsInfo, *QueryM
 	return &out, qm, nil
 }
 
-func (c *Catalog) ProxyConfig(proxyid string, q *QueryOptions) (*ProxyInfo, *QueryMeta, error) {
+func (c *AgentConnect) ProxyConfig(proxyid string, q *QueryOptions) (*ProxyInfo, *QueryMeta, error) {
 	var out ProxyInfo
 	qm, err := c.doGet(q, "/agent/connect/proxy/"+proxyid, &out)
 	if err != nil {
