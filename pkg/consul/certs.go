@@ -29,6 +29,8 @@ type certificateFetcher struct {
 
 	certs     chan types.CertificateAndKey
 	rootCerts chan types.Certificates
+
+	configWriter ConfigWriter
 }
 
 func (c *certificateFetcher) Certs() <-chan types.CertificateAndKey {
@@ -39,7 +41,7 @@ func (c *certificateFetcher) RootCerts() <-chan types.Certificates {
 	return c.rootCerts
 }
 
-func NewCertificateFetcher(ctx context.Context, cfg ConsulConnectConfig) (CertificateFetcher, error) {
+func NewCertificateFetcher(ctx context.Context, configWriter ConfigWriter, cfg ConsulConnectConfig) (CertificateFetcher, error) {
 	consulConfig := api.DefaultConfig()
 	consulConfig.Token = cfg.Token()
 	client, err := api.NewClient(consulConfig)
@@ -47,14 +49,16 @@ func NewCertificateFetcher(ctx context.Context, cfg ConsulConnectConfig) (Certif
 	if err != nil {
 		return nil, err
 	}
-	return NewCertificateFetcherFromInterface(ctx, cfg, api.NewAgentConnect(client))
+	return NewCertificateFetcherFromInterface(ctx, configWriter, cfg, api.NewAgentConnect(client))
 }
 
-func NewCertificateFetcherFromInterface(ctx context.Context, cfg ConsulConnectConfig, client ConnectClient) (CertificateFetcher, error) {
+func NewCertificateFetcherFromInterface(ctx context.Context, configWriter ConfigWriter, cfg ConsulConnectConfig, client ConnectClient) (CertificateFetcher, error) {
 
 	c := &certificateFetcher{
 		certs:     make(chan types.CertificateAndKey),
 		rootCerts: make(chan types.Certificates),
+
+		configWriter: configWriter,
 	}
 	c.c = client
 
@@ -116,11 +120,11 @@ func (c *certificateFetcher) getProxyConfig(ctx context.Context, proxyid string)
 		q = &api.QueryOptions{
 			WaitIndex: query.LastIndex,
 		}
+		c.configWriter.Write(proxyinfo)
 		if !leafStarted {
 			go c.getLeaf(ctx, proxyinfo.TargetServiceName)
 			leafStarted = true
 		}
-		// TODO: upstream config potentially update
 	}
 }
 

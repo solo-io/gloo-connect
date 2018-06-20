@@ -11,6 +11,13 @@ import (
 	. "github.com/solo-io/consul-gloo-bridge/pkg/consul"
 )
 
+type fakeConfigWriter struct {
+}
+
+func (f *fakeConfigWriter) Write(cfg *api.ProxyInfo) error {
+	return nil
+}
+
 type fakeConsulConnectConfig struct {
 }
 
@@ -65,7 +72,8 @@ var _ = Describe("Certs", func() {
 			leafchan:    make(chan *api.LeafCertInfo, 10),
 			pconfigchan: make(chan *api.ProxyInfo, 10),
 		}
-		cf, err := NewCertificateFetcherFromInterface(ctx, &fakeConsulConnectConfig{}, mockClient)
+
+		cf, err := NewCertificateFetcherFromInterface(ctx, &fakeConfigWriter{}, &fakeConsulConnectConfig{}, mockClient)
 		Expect(err).NotTo(HaveOccurred())
 		certificateFetcher = cf
 
