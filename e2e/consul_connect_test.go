@@ -1,8 +1,11 @@
 package e2e_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +16,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	// . "github.com/solo-io/consul-gloo-bridge/e2e"
+	"github.com/hashicorp/consul/api"
 )
 
 var _ = Describe("ConsulConnect", func() {
@@ -80,8 +84,21 @@ var _ = Describe("ConsulConnect", func() {
 		Expect(consulSession).ShouldNot(gexec.Exit())
 		Eventually(consulSession.Out).Should(gbytes.Say("agent/proxy: starting proxy:"))
 
-		// check that gloo bridge is started, and that gloo bridge started envoy
+		// check that a port was opened where consul says it should have been opened (get the port from consul connect and check that it is open)
+		resp, err := http.Get("http://127.0.0.1:8500/v1/agent/connect/proxy/web-proxy")
+		Expect(err).NotTo(HaveOccurred())
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		Expect(err).NotTo(HaveOccurred())
 
+		var cfg api.ProxyInfo
+		json.Unmarshal(body, &cfg)
+
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
+		Expect(err).NotTo(HaveOccurred())
+
+		// We are connected! good enough!
+		conn.Close()
 	})
 
 })
