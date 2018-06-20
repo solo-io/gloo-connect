@@ -47,7 +47,7 @@ func Run(runconfig RunConfig) error {
 		Cluster: cfg.ProxyId() + "~" + rolename,
 	}
 
-	e := envoy.NewEnvoy(runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
+	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
 	envoyCfg := envoy.Config{
 		LeafCert: leaftcert,
 		RootCas:  rootcert,

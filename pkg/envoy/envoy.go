@@ -40,6 +40,7 @@ type envoy struct {
 	glooPort     uint
 	configDir    string
 	id           *envoycore.Node
+	envoyBin     string
 
 	children []*EnvoyInstance
 
@@ -47,7 +48,10 @@ type envoy struct {
 	doneInstances chan *EnvoyInstance
 }
 
-func NewEnvoy(glooAddress string, glooPort uint, configDir string, id *envoycore.Node) Envoy {
+func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir string, id *envoycore.Node) Envoy {
+	if envoyBin == "" {
+		envoyBin, _ = exec.LookPath("envoy")
+	}
 	return &envoy{
 		glooAddress: glooAddress,
 		glooPort:    glooPort,
@@ -211,7 +215,7 @@ func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 	// start new envoy and pass the restart epoch
 
 	// TODO add config file
-	envoyCommand := exec.Command("envoy", "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
+	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
 	err := envoyCommand.Start()
 	if err != nil {
 		return nil, err

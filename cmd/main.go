@@ -12,6 +12,7 @@ func main() {
 	flag.StringVar(&rc.GlooAddress, "gloo-address", "", "address for gloo ADS server")
 	flag.UintVar(&rc.GlooPort, "gloo-port", 0, "port for gloo ADS server")
 	flag.StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
+	flag.StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 	flag.Parse()
 
 	runner.Run(rc)
