@@ -12,4 +12,6 @@ func (g *GlooConfigWriter) Write(cfg *api.ProxyInfo) error {
 	panic("TODO")
 }
 
-var _ consul.ConfigWriter = &GlooConfigWriter{}
+func NewConfigWriter(cfg consul.ConsulConnectConfig) (string, consul.ConfigWriter) {
+	panic("TODO: return (rolename, configobj)")
+}

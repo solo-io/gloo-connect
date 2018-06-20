@@ -2,20 +2,36 @@ package runner
 
 import (
 	"context"
+	"errors"
+	"io/ioutil"
+	"os"
+	"time"
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	"github.com/hashicorp/consul/api"
 	"github.com/solo-io/consul-gloo-bridge/pkg/consul"
 	"github.com/solo-io/consul-gloo-bridge/pkg/envoy"
 	"github.com/solo-io/consul-gloo-bridge/pkg/gloo"
 )
 
-func Run() error {
-	var configWriter consul.ConfigWriter = &gloo.GlooConfigWriter{}
+func Run(runconfig RunConfig) error {
+
+	if runconfig.ConfigDir == "" {
+		var err error
+		runconfig.ConfigDir, err = ioutil.TempDir("", "")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(runconfig.ConfigDir)
+	}
+
 	// get what we need from consul
 	cfg, err := consul.NewConsulConnectConfigFromEnv()
 	if err != nil {
 		return err
 	}
+	rolename, configWriter := gloo.NewConfigWriter(cfg)
+
 	ctx := context.Background()
 	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
 	if err != nil {
@@ -26,20 +42,24 @@ func Run() error {
 	rootcert := <-cf.RootCerts()
 	leaftcert := <-cf.Certs()
 
-	glooAddress := "fake"
-	glooPort := uint(34)
-	configDir := "fake"
 	id := &envoycore.Node{
-		Id: "fake",
+		Id:      getNodeName(),
+		Cluster: cfg.ProxyId() + "~" + rolename,
 	}
 
-	e := envoy.NewEnvoy(glooAddress, glooPort, configDir, id)
+	e := envoy.NewEnvoy(runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
 	envoyCfg := envoy.Config{
 		LeafCert: leaftcert,
 		RootCas:  rootcert,
 	}
-	e.WriteConfig(envoyCfg)
-	e.Reload()
+	err = e.WriteConfig(envoyCfg)
+	if err != nil {
+		return errors.New("can't write config")
+	}
+	err = e.Reload()
+	if err != nil {
+		return errors.New("can't start envoy config")
+	}
 
 	for {
 		select {
@@ -50,7 +70,38 @@ func Run() error {
 		case leaftcert = <-cf.Certs():
 			envoyCfg.LeafCert = leaftcert
 		}
-		e.WriteConfig(envoyCfg)
+		err = e.WriteConfig(envoyCfg)
+		if err != nil {
+			return errors.New("can't write config")
+		}
+		EventialyReload(e)
 
 	}
+}
+
+func EventialyReload(e envoy.Envoy) {
+	for {
+		err := e.Reload()
+		if err == nil {
+			return
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func getNodeName() string {
+	consulConfig := api.DefaultConfig()
+	client, err := api.NewClient(consulConfig)
+	if err == nil {
+		name, err := client.Agent().NodeName()
+		if err == nil {
+			return name
+		}
+	}
+	name, err := os.Hostname()
+	if err == nil {
+		return name
+	}
+
+	return "generic-node"
 }
