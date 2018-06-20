@@ -74,12 +74,11 @@ func Run(runconfig RunConfig) error {
 		if err != nil {
 			return errors.New("can't write config")
 		}
-		EventialyReload(e)
-
+		EventuallyReload(e)
 	}
 }
 
-func EventialyReload(e envoy.Envoy) {
+func EventuallyReload(e envoy.Envoy) {
 	for {
 		err := e.Reload()
 		if err == nil {
