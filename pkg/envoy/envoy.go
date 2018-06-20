@@ -25,8 +25,8 @@ type Config struct {
 }
 
 type Envoy interface {
-	WriteConfig(cfg Config)
-	HotRestart()
+	WriteConfig(cfg Config) error
+	Reload() error
 }
 
 type EnvoyInstance struct {
@@ -39,15 +39,21 @@ type envoy struct {
 	glooAddress  string
 	glooPort     uint
 	configDir    string
-
-	cluster string
-	node    string
-	proxyid string
+	id           *envoycore.Node
 
 	children []*EnvoyInstance
 
 	configChanged chan struct{}
 	doneInstances chan *EnvoyInstance
+}
+
+func NewEnvoy(glooAddress string, glooPort uint, configDir string, id *envoycore.Node) Envoy {
+	return &envoy{
+		glooAddress: glooAddress,
+		glooPort:    glooPort,
+		configDir:   configDir,
+		id:          id,
+	}
 }
 
 func (e *envoy) Run() {
@@ -116,10 +122,7 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 
 	const glooClusterName = "xds_cluster"
 
-	bootstrap.Node = &envoycore.Node{
-		Cluster: e.cluster,
-		Id:      e.node + "." + e.proxyid,
-	}
+	bootstrap.Node = e.id
 
 	// get gloo xds
 	bootstrap.DynamicResources = &envoybootstrap.Bootstrap_DynamicResources{
@@ -182,7 +185,7 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 	return bootstrap
 }
 
-func (e *envoy) HotRestart() error {
+func (e *envoy) Reload() error {
 	ei, err := e.startEnvoy()
 	if err != nil {
 		return err
