@@ -208,13 +208,14 @@ func (e *envoy) startEnvoyAndWatchit() error {
 		return err
 	}
 
+	e.children = append(e.children, ei)
+
 	go func() {
 		// TODO: log errors
 		<-ei.Done
 		e.doneInstances <- ei
 	}()
 
-	e.children = append(e.children, ei)
 	return nil
 }
 
