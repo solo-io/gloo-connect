@@ -28,7 +28,7 @@ type ProxyConfig struct {
 type Upstream struct {
 	DestinationName string `json:"destination_name"`
 	DestinationType string `json:"destination_type"`
-	LocalBindPort   string `json:"local_bind_port"`
+	LocalBindPort   uint32 `json:"local_bind_port"`
 }
 
 type ProxyInfo struct {
