@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 
 	"github.com/solo-io/consul-gloo-bridge/pkg/runner"
 )
@@ -15,5 +16,8 @@ func main() {
 	flag.StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 	flag.Parse()
 
-	runner.Run(rc)
+	err := runner.Run(rc)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

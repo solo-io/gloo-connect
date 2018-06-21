@@ -61,7 +61,7 @@ var _ = Describe("ConsulConnect", func() {
 		err = os.Mkdir(bridgeConfigDir, 0755)
 		Expect(err).NotTo(HaveOccurred())
 
-		svc := fmt.Sprintf(string(svctemplate), fmt.Sprintf("\"%s\", \"-gloo-address\", \"localhost\", \"--gloo-port\", \"8081\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath))
+		svc := fmt.Sprintf(string(svctemplate), fmt.Sprintf("\"%s\", \"--gloo-address\", \"localhost\", \"--gloo-port\", \"8081\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath))
 
 		consulConfigDir = filepath.Join(tmpdir, "consul-config")
 		err = os.Mkdir(consulConfigDir, 0755)
@@ -140,6 +140,7 @@ var _ = Describe("ConsulConnect", func() {
 		if networkListener != nil {
 			networkListener.Close()
 			networkListener = nil
+			time.Sleep(time.Second)
 		}
 	})
 

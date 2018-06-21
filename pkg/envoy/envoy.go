@@ -67,6 +67,7 @@ func (e *envoy) Run() {
 			e.remove(ei)
 			if len(e.children) == 0 {
 				e.Exit()
+				return
 			}
 		case <-e.configChanged:
 			e.startEnvoy()

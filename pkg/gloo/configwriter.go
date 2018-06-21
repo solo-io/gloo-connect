@@ -9,9 +9,11 @@ type GlooConfigWriter struct {
 }
 
 func (g *GlooConfigWriter) Write(cfg *api.ProxyInfo) error {
-	panic("TODO")
+	// panic("TODO")
+	return nil
 }
 
 func NewConfigWriter(cfg consul.ConsulConnectConfig) (string, consul.ConfigWriter) {
-	panic("TODO: return (rolename, configobj)")
+	// panic("TODO: return (rolename, configobj)")
+	return "FakeRole", &GlooConfigWriter{}
 }

@@ -91,7 +91,7 @@ func (c *AgentConnect) LeafCert(svcname string, q *QueryOptions) (*LeafCertInfo,
 
 func (c *AgentConnect) ProxyConfig(proxyid string, q *QueryOptions) (*ProxyInfo, *QueryMeta, error) {
 	var out ProxyInfo
-	qm, err := c.doGet(q, "/agent/connect/proxy/"+proxyid, &out)
+	qm, err := c.doGet(q, "/v1/agent/connect/proxy/"+proxyid, &out)
 	if err != nil {
 		return nil, nil, err
 	}
