@@ -125,6 +125,10 @@ func (c *certificateFetcher) getProxyConfig(ctx context.Context, proxyid string)
 			go c.getLeaf(ctx, proxyinfo.TargetServiceName)
 			leafStarted = true
 		}
+		if query.LastIndex == 0 {
+			// if this is not a blocking query, exit
+			return
+		}
 	}
 }
 
