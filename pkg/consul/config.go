@@ -19,8 +19,8 @@ func (c *consulConnectConfig) Token() string   { return c.token }
 
 func NewConsulConnectConfigFromEnv() (ConsulConnectConfig, error) {
 	cfg := &consulConnectConfig{
-		proxyId: os.Getenv("CONSUL_PROXY_ID"),
-		token:   os.Getenv("CONSUL_PROXY_TOKEN"),
+		proxyId: os.Getenv("CONNECT_PROXY_ID"),
+		token:   os.Getenv("CONNECT_PROXY_TOKEN"),
 	}
 
 	if cfg.proxyId == "" {
