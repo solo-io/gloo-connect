@@ -2,6 +2,7 @@ package envoy
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -25,7 +26,7 @@ type Config struct {
 }
 
 type Envoy interface {
-	Run()
+	Run(context.Context)
 	Exit()
 
 	WriteConfig(cfg Config) error
@@ -67,7 +68,7 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 	}
 }
 
-func (e *envoy) Run() {
+func (e *envoy) Run(ctx context.Context) {
 	// start envoy one time at least to make sure we have children
 	<-e.configChanged
 	e.startEnvoyAndWatchit()
@@ -80,6 +81,9 @@ func (e *envoy) Run() {
 			e.remove(ei)
 		case <-e.configChanged:
 			e.startEnvoyAndWatchit()
+		case <-ctx.Done():
+			e.Exit()
+			return
 		}
 	}
 }

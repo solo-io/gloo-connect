@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"time"
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -13,6 +14,18 @@ import (
 	"github.com/solo-io/consul-gloo-bridge/pkg/envoy"
 	"github.com/solo-io/consul-gloo-bridge/pkg/gloo"
 )
+
+func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(ctx)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		signal.Reset(os.Interrupt)
+		cancel()
+	}()
+	return ctx, cancel
+}
 
 func Run(runconfig RunConfig) error {
 
@@ -33,6 +46,9 @@ func Run(runconfig RunConfig) error {
 	rolename, configWriter := gloo.NewConfigWriter(cfg)
 
 	ctx := context.Background()
+	ctx, cancelTerm := cancelOnTerm(ctx)
+	defer cancelTerm()
+
 	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
 	if err != nil {
 		return err
@@ -62,28 +78,32 @@ func Run(runconfig RunConfig) error {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	go func() {
-		e.Run()
-		cancel()
-	}()
 	defer cancel()
-	defer e.Exit()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case rootcert = <-cf.RootCerts():
-			envoyCfg.RootCas = rootcert
-		case leaftcert = <-cf.Certs():
-			envoyCfg.LeafCert = leaftcert
+	go func() {
+		defer cancel()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case rootcert = <-cf.RootCerts():
+				envoyCfg.RootCas = rootcert
+			case leaftcert = <-cf.Certs():
+				envoyCfg.LeafCert = leaftcert
+			}
+			err = e.WriteConfig(envoyCfg)
+			if err != nil {
+				// TODO: log this
+				// return errors.New("can't write config")
+				return
+			}
+			EventuallyReload(e)
 		}
-		err = e.WriteConfig(envoyCfg)
-		if err != nil {
-			return errors.New("can't write config")
-		}
-		EventuallyReload(e)
-	}
+	}()
+
+	e.Run(ctx)
+	return ctx.Err()
 }
 
 func EventuallyReload(e envoy.Envoy) {

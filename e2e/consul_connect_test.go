@@ -80,7 +80,7 @@ var _ = Describe("ConsulConnect", func() {
 	})
 
 	AfterEach(func() {
-		gexec.KillAndWait()
+		gexec.TerminateAndWait("5s")
 		consulSession = nil
 
 		if tmpdir != "" {
@@ -155,7 +155,7 @@ var _ = Describe("ConsulConnect", func() {
 		runConsul()
 		time.Sleep(1 * time.Second)
 		Expect(consulSession).ShouldNot(gexec.Exit())
-		Eventually(consulSession.Out).Should(gbytes.Say("agent/proxy: starting proxy:"))
+		Eventually(consulSession.Out, "5s").Should(gbytes.Say("agent/proxy: starting proxy:"))
 
 		// check that a port was opened where consul says it should have been opened (get the port from consul connect and check that it is open)
 		resp, err := http.Get("http://127.0.0.1:8500/v1/agent/connect/proxy/web-proxy")
@@ -169,7 +169,7 @@ var _ = Describe("ConsulConnect", func() {
 
 		runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
 
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
 		Expect(err).NotTo(HaveOccurred())
