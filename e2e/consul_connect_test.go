@@ -40,7 +40,7 @@ var _ = Describe("ConsulConnect", func() {
 	BeforeSuite(func() {
 		var err error
 		pathToGlooBridge, err = gexec.Build("github.com/solo-io/consul-gloo-bridge/cmd")
-		Ω(err).ShouldNot(HaveOccurred())
+		Expect(err).ShouldNot(HaveOccurred())
 	})
 
 	AfterSuite(func() {
@@ -61,7 +61,15 @@ var _ = Describe("ConsulConnect", func() {
 		err = os.Mkdir(bridgeConfigDir, 0755)
 		Expect(err).NotTo(HaveOccurred())
 
-		svc := fmt.Sprintf(string(svctemplate), fmt.Sprintf("\"%s\", \"--gloo-address\", \"localhost\", \"--gloo-port\", \"8081\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath))
+		svcargs := fmt.Sprintf("\"%s\", \"--gloo-address\", \"localhost\", \"--gloo-port\", \"8081\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath)
+		if os.Getenv("USE_DLV") == "1" {
+			dlv, err := exec.LookPath("dlv")
+			if err == nil {
+				svcargs = "\"" + dlv + "\", \"exec\", \"--headless\", \"--listen\", \"localhost:2345\", \"--\", " + svcargs
+			}
+		}
+
+		svc := fmt.Sprintf(string(svctemplate), svcargs)
 
 		consulConfigDir = filepath.Join(tmpdir, "consul-config")
 		err = os.Mkdir(consulConfigDir, 0755)
@@ -69,7 +77,6 @@ var _ = Describe("ConsulConnect", func() {
 
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "service.json"), []byte(svc), 0644)
 		Expect(err).NotTo(HaveOccurred())
-
 	})
 
 	AfterEach(func() {
@@ -161,7 +168,9 @@ var _ = Describe("ConsulConnect", func() {
 		json.Unmarshal(body, &cfg)
 
 		runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
+
 		time.Sleep(10 * time.Second)
+
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
 		Expect(err).NotTo(HaveOccurred())
 
