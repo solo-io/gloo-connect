@@ -57,6 +57,9 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 		glooPort:    glooPort,
 		configDir:   configDir,
 		id:          id,
+
+		configChanged: make(chan struct{}, 10),
+		doneInstances: make(chan *EnvoyInstance),
 	}
 }
 
@@ -70,7 +73,7 @@ func (e *envoy) Run() {
 				return
 			}
 		case <-e.configChanged:
-			e.startEnvoy()
+			e.startEnvoyAndWatchit()
 		}
 	}
 }
@@ -112,8 +115,6 @@ func (e *envoy) WriteConfig(cfg Config) error {
 	if err != nil {
 		return err
 	}
-
-	e.configChanged <- struct{}{}
 
 	return nil
 }
@@ -191,6 +192,11 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 }
 
 func (e *envoy) Reload() error {
+	e.configChanged <- struct{}{}
+	return nil
+}
+
+func (e *envoy) startEnvoyAndWatchit() error {
 	ei, err := e.startEnvoy()
 	if err != nil {
 		return err
