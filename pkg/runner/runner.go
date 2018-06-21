@@ -61,6 +61,14 @@ func Run(runconfig RunConfig) error {
 		return errors.New("can't start envoy config")
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		e.Run()
+		cancel()
+	}()
+	defer cancel()
+	defer e.Exit()
+
 	for {
 		select {
 		case <-ctx.Done():

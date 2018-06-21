@@ -25,6 +25,9 @@ type Config struct {
 }
 
 type Envoy interface {
+	Run()
+	Exit()
+
 	WriteConfig(cfg Config) error
 	Reload() error
 }
@@ -57,6 +60,7 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 		glooPort:    glooPort,
 		configDir:   configDir,
 		id:          id,
+		envoyBin:    envoyBin,
 
 		configChanged: make(chan struct{}, 10),
 		doneInstances: make(chan *EnvoyInstance),
@@ -64,14 +68,16 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 }
 
 func (e *envoy) Run() {
+	// start envoy one time at least to make sure we have children
+	<-e.configChanged
+	e.startEnvoyAndWatchit()
 	for {
+		if len(e.children) == 0 {
+			return
+		}
 		select {
 		case ei := <-e.doneInstances:
 			e.remove(ei)
-			if len(e.children) == 0 {
-				e.Exit()
-				return
-			}
 		case <-e.configChanged:
 			e.startEnvoyAndWatchit()
 		}
@@ -158,7 +164,7 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 			Name:                 glooClusterName,
 			ConnectTimeout:       5 * time.Second,
 			Http2ProtocolOptions: &envoycore.Http2ProtocolOptions{},
-			Type:                 envoyapi.Cluster_STATIC,
+			Type:                 envoyapi.Cluster_STRICT_DNS,
 			Hosts: []*envoycore.Address{{
 				Address: &envoycore.Address_SocketAddress{
 					SocketAddress: &envoycore.SocketAddress{
