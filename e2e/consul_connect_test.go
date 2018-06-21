@@ -17,6 +17,17 @@ import (
 	"github.com/onsi/gomega/gexec"
 	// . "github.com/solo-io/consul-gloo-bridge/e2e"
 	"github.com/hashicorp/consul/api"
+
+	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoyapi "github.com/envoyproxy/go-control-plane/envoy/api/v2"
+	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoylistener "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
+	envoyv2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
+	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
+
+	xds "github.com/envoyproxy/go-control-plane/pkg/server"
+
+	"google.golang.org/grpc"
 )
 
 var _ = Describe("ConsulConnect", func() {
@@ -50,7 +61,7 @@ var _ = Describe("ConsulConnect", func() {
 		err = os.Mkdir(bridgeConfigDir, 0755)
 		Expect(err).NotTo(HaveOccurred())
 
-		svc := fmt.Sprintf(string(svctemplate), fmt.Sprintf("\"%s\", \"-gloo-address\", \"localhost\", \"--gloo-port\", \"8080\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath))
+		svc := fmt.Sprintf(string(svctemplate), fmt.Sprintf("\"%s\", \"-gloo-address\", \"localhost\", \"--gloo-port\", \"8081\", \"--conf-dir\",\"%s\", \"--envoy-path\",\"%s\"", pathToGlooBridge, bridgeConfigDir, envoypath))
 
 		consulConfigDir = filepath.Join(tmpdir, "consul-config")
 		err = os.Mkdir(consulConfigDir, 0755)
@@ -78,6 +89,60 @@ var _ = Describe("ConsulConnect", func() {
 		Expect(err).NotTo(HaveOccurred())
 	}
 
+	var networkListener net.Listener
+
+	runFakeXds := func(bindadr string, port uint) {
+		var filterChains []envoylistener.FilterChain = []envoylistener.FilterChain{{
+			Filters: []envoylistener.Filter{{
+				Name: "envoy.echo",
+			}},
+		}}
+
+		l := &envoyapi.Listener{
+			Name: "test",
+			Address: envoycore.Address{
+				Address: &envoycore.Address_SocketAddress{
+					SocketAddress: &envoycore.SocketAddress{
+						Protocol: envoycore.TCP,
+						Address:  bindadr,
+						PortSpecifier: &envoycore.SocketAddress_PortValue{
+							PortValue: uint32(port),
+						},
+						Ipv4Compat: true,
+					},
+				},
+			},
+			FilterChains: filterChains,
+		}
+		var listenersProto []envoycache.Resource
+		listenersProto = append(listenersProto, l)
+
+		snap := envoycache.NewSnapshot("v1", nil, nil, nil, listenersProto)
+
+		envoyCache := envoycache.NewSnapshotCache(true, fakehasher{}, fakelogger{})
+		envoyCache.SetSnapshot("test", snap)
+
+		grpcServer := grpc.NewServer()
+
+		xdsServer := xds.NewServer(envoyCache, nil)
+		envoyv2.RegisterAggregatedDiscoveryServiceServer(grpcServer, xdsServer)
+		v2.RegisterEndpointDiscoveryServiceServer(grpcServer, xdsServer)
+		v2.RegisterClusterDiscoveryServiceServer(grpcServer, xdsServer)
+		v2.RegisterRouteDiscoveryServiceServer(grpcServer, xdsServer)
+		v2.RegisterListenerDiscoveryServiceServer(grpcServer, xdsServer)
+		lis, err := net.Listen("tcp", ":8081")
+		Expect(err).NotTo(HaveOccurred())
+		networkListener = lis
+		go grpcServer.Serve(networkListener)
+	}
+
+	AfterEach(func() {
+		if networkListener != nil {
+			networkListener.Close()
+			networkListener = nil
+		}
+	})
+
 	It("should start envoy", func() {
 		runConsul()
 		time.Sleep(1 * time.Second)
@@ -94,11 +159,27 @@ var _ = Describe("ConsulConnect", func() {
 		var cfg api.ProxyInfo
 		json.Unmarshal(body, &cfg)
 
+		runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
+		time.Sleep(10 * time.Second)
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
 		Expect(err).NotTo(HaveOccurred())
 
 		// We are connected! good enough!
 		conn.Close()
 	})
-
 })
+
+type fakehasher struct{}
+
+func (fakehasher) ID(*envoycore.Node) string {
+	return "test"
+}
+
+type fakelogger struct{}
+
+func (fakelogger) Errorf(format string, args ...interface{}) {
+
+}
+func (fakelogger) Infof(format string, args ...interface{}) {
+
+}
