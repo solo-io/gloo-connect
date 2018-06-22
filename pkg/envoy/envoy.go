@@ -17,7 +17,7 @@ import (
 	envoybootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/solo-io/consul-gloo-bridge/pkg/types"
+	"github.com/solo-io/gloo-consul-bridge/pkg/types"
 )
 
 type Config struct {

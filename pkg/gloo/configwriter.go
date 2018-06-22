@@ -2,7 +2,7 @@ package gloo
 
 import (
 	"github.com/hashicorp/consul/api"
-	"github.com/solo-io/consul-gloo-bridge/pkg/consul"
+	"github.com/solo-io/gloo-consul-bridge/pkg/consul"
 )
 
 type GlooConfigWriter struct {

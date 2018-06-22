@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/solo-io/consul-gloo-bridge/pkg/runner"
+	"github.com/solo-io/gloo-consul-bridge/pkg/runner"
 )
 
 func main() {

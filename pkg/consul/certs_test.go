@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/solo-io/consul-gloo-bridge/pkg/consul"
+	. "github.com/solo-io/gloo-consul-bridge/pkg/consul"
 )
 
 type fakeConfigWriter struct {

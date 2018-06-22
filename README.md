@@ -1,4 +1,4 @@
-# consul-gloo-bridge
+# gloo-consul-bridge
 
 to make it compile first run:
 ```
