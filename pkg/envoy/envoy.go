@@ -26,7 +26,7 @@ type Config struct {
 }
 
 type Envoy interface {
-	Run(context.Context)
+	Run(context.Context) error
 	Exit()
 
 	WriteConfig(cfg Config) error
@@ -68,22 +68,26 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 	}
 }
 
-func (e *envoy) Run(ctx context.Context) {
+func (e *envoy) Run(ctx context.Context) error {
 	// start envoy one time at least to make sure we have children
 	<-e.configChanged
-	e.startEnvoyAndWatchit()
+	if err := e.startEnvoyAndWatchit(); err != nil {
+		return err
+	}
 	for {
 		if len(e.children) == 0 {
-			return
+			return nil
 		}
 		select {
 		case ei := <-e.doneInstances:
 			e.remove(ei)
 		case <-e.configChanged:
-			e.startEnvoyAndWatchit()
+			if err := e.startEnvoyAndWatchit(); err != nil {
+				return err
+			}
 		case <-ctx.Done():
 			e.Exit()
-			return
+			return nil
 		}
 	}
 }
@@ -254,7 +258,7 @@ func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 	select {
 	case err := <-envoiddied:
 		if err == nil {
-			return nil, errors.New("envoy died prematurly")
+			return nil, errors.New("envoy died prematurely")
 		}
 		return nil, err
 	case <-time.After(5 * time.Second):
