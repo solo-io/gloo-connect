@@ -10,7 +10,6 @@ import (
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo-consul-bridge/pkg/gloo/connect"
-	"github.com/solo-io/gloo/pkg/protoutil"
 )
 
 type ConfigWriter struct {
@@ -100,6 +99,8 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consulHostna
 	if inbound == nil {
 		inbound = &connect.InboundListenerConfig{}
 	}
+	inbound.LocalServiceName = cfg.TargetServiceName
+	inbound.LocalServiceAddress = cfg.Config.LocalServiceAddress
 	authConfig := inbound.AuthConfig
 	if authConfig == nil {
 		authConfig = &connect.AuthConfig{}
@@ -112,11 +113,7 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consulHostna
 	inbound.AuthConfig = authConfig
 	inboundConfig.Inbound = inbound
 	listenerConfig.Config = inboundConfig
-	protoStruct, err := protoutil.MarshalStruct(listenerConfig)
-	if err != nil {
-		panic("unexpcted marshal err: "+err.Error())
-	}
-	listener.Config = protoStruct
+	connect.SetListenerConfig(listener, listenerConfig)
 }
 
 func syncOutboundListener(listener *v1.Listener, upstream api.Upstream) {
@@ -143,8 +140,5 @@ func syncOutboundListener(listener *v1.Listener, upstream api.Upstream) {
 	outbound.DestinationConsulType = upstream.DestinationType
 	outboundConfig.Outbound = outbound
 	listenerConfig.Config = outboundConfig
-	protoStruct, err := protoutil.MarshalStruct(listenerConfig)
-	if err != nil {
-		panic("unexpcted marshal err: "+err.Error())
-	}
-	listener.Config = protoStruct}
+	connect.SetListenerConfig(listener, listenerConfig)
+}
