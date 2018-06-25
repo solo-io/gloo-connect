@@ -24,6 +24,25 @@
 #   go-tests = true
 #   unused-packages = true
 
+[[override]]
+  name = "github.com/Azure/go-autorest"
+  version = "v9.10.0"
+
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.9.0"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.9.0"
+
+[[override]]
+  name = "k8s.io/client-go"
+  version = "6.0.0"
+
+[[override]]
+  revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
+  name = "github.com/json-iterator/go"
 
 [[constraint]]
   name = "github.com/hashicorp/consul"

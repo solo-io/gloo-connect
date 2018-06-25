@@ -19,7 +19,7 @@ func main() {
 }
 
 var (
-	opts bootstrap.Options
+	opts = &bootstrap.Options{}
 	rc   runner.RunConfig
 )
 
@@ -27,12 +27,12 @@ var rootCmd = &cobra.Command{
 	Use:   "gloo-consul-bridge",
 	Short: "runs the gloo-consul bridge to connect gloo to consul's connect api",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
+		return run()
 	},
 }
 
 func run() error {
-	store, err := configstorage.Bootstrap(opts)
+	store, err := configstorage.Bootstrap(*opts)
 	if err != nil {
 		return err
 	}
