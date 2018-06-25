@@ -18,6 +18,7 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/solo-io/gloo-consul-bridge/pkg/types"
+	"github.com/solo-io/gloo/pkg/log"
 )
 
 type Config struct {
@@ -238,10 +239,14 @@ func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 
 	// TODO add config file
 	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
+	envoyCommand.Stderr= os.Stderr
+	envoyCommand.Stdout= os.Stderr
 	err := envoyCommand.Start()
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("running envoy with cmd %v", envoyCommand.Args)
 
 	envoiddied := make(chan error, 1)
 
