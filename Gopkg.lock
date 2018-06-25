@@ -367,8 +367,7 @@
     "pkg/storage/dependencies",
     "pkg/storage/file"
   ]
-  revision = "319c70cc1dc29e8e7aae167a142331f4400ff4d0"
-  version = "0.2.26"
+  revision = "db0ffe8ab5e287fa89f8c276416e94cdc5314044"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -684,6 +683,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "69ac2d847247324ab467599b13d692405d7aa976c3b49a87a0289f84b669239d"
+  inputs-digest = "f06d5ecfd571cd38eed03475308206fe3469ed43469e7a9335a3435c2939f33e"
   solver-name = "gps-cdcl"
   solver-version = 1

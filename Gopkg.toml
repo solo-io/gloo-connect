@@ -32,3 +32,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[override]]
+  name = "github.com/solo-io/gloo"
+  revision = "db0ffe8ab5e287fa89f8c276416e94cdc5314044"
