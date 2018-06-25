@@ -1,3 +1,12 @@
+
+
+<h1 align="center">
+    <img src="docs/GlooConnect.png" alt="Gloo Connect" width="428" height="242">
+  <br>
+  Gloo & Consul connect offering  
+</h1>
+
+
 # gloo-consul-bridge
 
 to make it compile first run:
