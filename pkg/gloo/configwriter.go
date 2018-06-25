@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/solo-io/consul-gloo-bridge/pkg/consul"
+	"github.com/solo-io/gloo-consul-bridge/pkg/consul"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
-	"github.com/solo-io/gloo/pkg/plugins/connect"
 	"github.com/solo-io/gloo/pkg/storage"
+	"github.com/solo-io/gloo-consul-bridge/pkg/gloo/connect"
 )
 
 type ConfigWriter struct {

@@ -13,6 +13,7 @@ import (
 	"github.com/solo-io/gloo-consul-bridge/pkg/consul"
 	"github.com/solo-io/gloo-consul-bridge/pkg/envoy"
 	"github.com/solo-io/gloo-consul-bridge/pkg/gloo"
+	"github.com/solo-io/gloo/pkg/storage"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -27,8 +28,7 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func Run(runconfig RunConfig) error {
-
+func Run(runconfig RunConfig, store storage.Interface) error {
 	if runconfig.ConfigDir == "" {
 		var err error
 		runconfig.ConfigDir, err = ioutil.TempDir("", "")
@@ -43,7 +43,12 @@ func Run(runconfig RunConfig) error {
 	if err != nil {
 		return err
 	}
-	rolename, configWriter := gloo.NewConfigWriter(cfg)
+	// TODO(ilackarms): do not hard-code
+	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
+		ConsulHostname: "localhost",
+		ConsulPort: 8500,
+		AuthorizePath: "/v1/agent/connect/authorize",
+	})
 
 	ctx := context.Background()
 	ctx, cancelTerm := cancelOnTerm(ctx)
