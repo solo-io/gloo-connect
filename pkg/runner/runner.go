@@ -46,8 +46,8 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 	// TODO(ilackarms): do not hard-code
 	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
 		ConsulHostname: "localhost",
-		ConsulPort: 8500,
-		AuthorizePath: "/v1/agent/connect/authorize",
+		ConsulPort:     8500,
+		AuthorizePath:  "/v1/agent/connect/authorize",
 	})
 
 	ctx := context.Background()
@@ -64,8 +64,8 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 	leaftcert := <-cf.Certs()
 
 	id := &envoycore.Node{
-		Id:      getNodeName(),
-		Cluster: cfg.ProxyId() + "~" + rolename,
+		Id:      rolename + "~" + getNodeName(),
+		Cluster: cfg.ProxyId(),
 	}
 
 	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
@@ -107,7 +107,9 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		}
 	}()
 
-	e.Run(ctx)
+	if err := e.Run(ctx); err != nil {
+		return err
+	}
 	return ctx.Err()
 }
 
