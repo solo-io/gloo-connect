@@ -15,10 +15,12 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
     <img src="docs/figures/overview.png" alt="GlooConnect_overview" width="800" height="500">
 </p>
 
+<BR>
+## Gloo Connect Features
 ### Consul Connect: Layer 3/4
 * **Security**: AuthN, AuthZ, intents, policy, mTLS
 * **Networking**: TCP routing 
-### Gloo Connecton: Layer 7
+### Gloo Connect: Layer 7
 * **Security**: RBAC
 * **Observability**: Analytics, Monitoring, Debugging, Logging
 * **Traffic control**: Rate limit, Transformation, Compression, Caching
