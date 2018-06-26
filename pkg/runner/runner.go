@@ -48,6 +48,7 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		ConsulHostname: "localhost",
 		ConsulPort:     8500,
 		AuthorizePath:  "/v1/agent/connect/authorize",
+		ConfigDir: runconfig.ConfigDir,
 	})
 
 	ctx := context.Background()

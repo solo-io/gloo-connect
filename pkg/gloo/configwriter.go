@@ -10,6 +10,7 @@ import (
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo-consul-bridge/pkg/gloo/connect"
+	"path/filepath"
 )
 
 type ConfigWriter struct {
@@ -25,6 +26,12 @@ type ConsulInfo struct {
 	ConsulPort uint32
 	// path where consul is serving Authorize requests
 	AuthorizePath string
+	// dir where gloo bridge config is stored
+	ConfigDir string
+}
+
+func secretPaths(configDir string) (string, string, string) {
+	return filepath.Join(configDir, "leaf.crt"), filepath.Join(configDir, "leaf.key"), filepath.Join(configDir, "rootcas.crt")
 }
 
 func (cw *ConfigWriter) Write(cfg *api.ProxyInfo) error {
@@ -69,7 +76,7 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, cfg *api.ProxyInfo) *v1.Role {
 			role.Listeners = append(role.Listeners, &v1.Listener{})
 		}
 	}
-	syncInboundListener(role.Listeners[0], cfg, cw.consulInfo.ConsulHostname, cw.consulInfo.ConsulPort, cw.consulInfo.AuthorizePath)
+	syncInboundListener(role.Listeners[0], cfg, cw.consulInfo)
 	// sort upstreams for idempotency
 	sort.SliceStable(upstreams, func(i, j int) bool {
 		return upstreams[i].LocalBindPort < upstreams[j].LocalBindPort
@@ -80,7 +87,7 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, cfg *api.ProxyInfo) *v1.Role {
 	return role
 }
 
-func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consulHostname string, consulPort uint32, authorizePath string) {
+func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consul ConsulInfo) {
 	listener.Name = cfg.ProxyServiceID + "-inbound"
 	listener.BindAddress = cfg.Config.BindAddress
 	listener.BindPort = uint32(cfg.Config.BindPort)
@@ -106,14 +113,24 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consulHostna
 		authConfig = &connect.AuthConfig{}
 	}
 	authConfig.Target = cfg.TargetServiceName
-	authConfig.AuthorizeHostname = consulHostname
-	authConfig.AuthorizePort = consulPort
-	authConfig.AuthorizePath = authorizePath
+	authConfig.AuthorizeHostname = consul.ConsulHostname
+	authConfig.AuthorizePort = consul.ConsulPort
+	authConfig.AuthorizePath = consul.AuthorizePath
 	// TODO (ilackarms): RequestTimeout:
 	inbound.AuthConfig = authConfig
 	inboundConfig.Inbound = inbound
 	listenerConfig.Config = inboundConfig
 	connect.SetListenerConfig(listener, listenerConfig)
+	caCert, privateKey, rootCa := secretPaths(consul.ConfigDir)
+	listener.SslConfig = &v1.SSLConfig{
+		SslSecrets: &v1.SSLConfig_SslFiles{
+			SslFiles: &v1.SSLFiles{
+				TlsCert: caCert,
+				TlsKey: privateKey,
+				RootCa: rootCa,
+			},
+		},
+	}
 }
 
 func syncOutboundListener(listener *v1.Listener, upstream api.Upstream) {
