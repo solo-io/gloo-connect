@@ -17,7 +17,7 @@ import (
 	envoybootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/solo-io/gloo-consul-bridge/pkg/types"
+	"github.com/solo-io/gloo-connect/pkg/types"
 	"github.com/solo-io/gloo/pkg/log"
 )
 
@@ -239,8 +239,8 @@ func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 
 	// TODO add config file
 	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
-	envoyCommand.Stderr= os.Stderr
-	envoyCommand.Stdout= os.Stderr
+	envoyCommand.Stderr = os.Stderr
+	envoyCommand.Stdout = os.Stderr
 	err := envoyCommand.Start()
 	if err != nil {
 		return nil, err

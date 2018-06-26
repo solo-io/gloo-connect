@@ -2,15 +2,17 @@ package gloo
 
 import (
 	"sort"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
+	"path/filepath"
+
 	"github.com/hashicorp/consul/api"
-	"github.com/solo-io/gloo-consul-bridge/pkg/consul"
+	"github.com/solo-io/gloo-connect/pkg/consul"
+	"github.com/solo-io/gloo-connect/pkg/gloo/connect"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/storage"
-	"github.com/solo-io/gloo-consul-bridge/pkg/gloo/connect"
-	"path/filepath"
 )
 
 type ConfigWriter struct {
@@ -126,8 +128,8 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consul Consu
 		SslSecrets: &v1.SSLConfig_SslFiles{
 			SslFiles: &v1.SSLFiles{
 				TlsCert: caCert,
-				TlsKey: privateKey,
-				RootCa: rootCa,
+				TlsKey:  privateKey,
+				RootCa:  rootCa,
 			},
 		},
 	}

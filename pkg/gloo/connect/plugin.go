@@ -24,7 +24,7 @@ import (
 // this is the key the plugin will search for in the listener config
 const (
 	PluginName = "connect.gloo.solo.io"
-	filterName = "io.solo.filters.network.client_certificate_restriction"
+	filterName = "io.solo.filters.network.consul_connect"
 )
 
 var (
@@ -73,13 +73,15 @@ func (p *Plugin) inboundListenerFilters(params *plugins.ListenerFilterPluginPara
 		return nil, errors.Errorf("must define local_service_address")
 	}
 
-	localUpstream, err := findUpstreamForService(params.Config.Upstreams, cfg.LocalServiceName)
-	if err != nil {
-		return nil, err
-	}
-	if err := validateListener(listener, localUpstream.Name, params.Config.VirtualServices); err != nil {
-		return nil, err
-	}
+	// TODO (ilackarms): support virtual service on inbound listener
+	//localUpstream, err := FindUpstreamForService(params.Config.Upstreams, cfg.LocalServiceName)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if err := validateListener(listener, localUpstream.Name, params.Config.VirtualServices); err != nil {
+	//	return nil, err
+	//}
+
 	parts := strings.Split(cfg.LocalServiceAddress, ":")
 	addr := parts[0]
 	port := uint32(80)
@@ -91,7 +93,7 @@ func (p *Plugin) inboundListenerFilters(params *plugins.ListenerFilterPluginPara
 		port = uint32(p)
 	}
 	localServiceCluster := &envoyapi.Cluster{
-		Name: fmt.Sprintf("local-service-%v-%v", localUpstream.Name, cfg.LocalServiceAddress),
+		Name: fmt.Sprintf("local-service-%v-%v", cfg.LocalServiceName, cfg.LocalServiceAddress),
 		Type: envoyapi.Cluster_STRICT_DNS,
 		Hosts: []*envoycore.Address{
 			{
@@ -107,6 +109,7 @@ func (p *Plugin) inboundListenerFilters(params *plugins.ListenerFilterPluginPara
 			},
 		},
 		DnsLookupFamily: envoyapi.Cluster_V4_ONLY,
+		ConnectTimeout: time.Second * 15,
 	}
 	consulAgentCluster := &envoyapi.Cluster{
 		Name: fmt.Sprintf("local-consul-agent"),
@@ -125,6 +128,7 @@ func (p *Plugin) inboundListenerFilters(params *plugins.ListenerFilterPluginPara
 			},
 		},
 		DnsLookupFamily: envoyapi.Cluster_V4_ONLY,
+		ConnectTimeout: time.Second * 15,
 	}
 	generatedClusters := []*envoyapi.Cluster{
 		localServiceCluster,
@@ -132,6 +136,7 @@ func (p *Plugin) inboundListenerFilters(params *plugins.ListenerFilterPluginPara
 	}
 	p.clustersToGenerate = append(p.clustersToGenerate, generatedClusters...)
 	inboundTcpProxy, err := protoutil.MarshalStruct(&envoytcpproxy.TcpProxy{
+		StatPrefix: "inbound-tcp-proxy-"+localServiceCluster.Name,
 		Cluster: localServiceCluster.Name,
 	})
 	if err != nil {
@@ -160,11 +165,12 @@ func (p *Plugin) outboundListenerFilters(params *plugins.ListenerFilterPluginPar
 	if err := validateListener(listener, cfg.DestinationConsulService, params.Config.VirtualServices); err != nil {
 		return nil, err
 	}
-	destinationUpstream, err := findUpstreamForService(params.Config.Upstreams, cfg.DestinationConsulService)
+	destinationUpstream, err := FindUpstreamForService(params.Config.Upstreams, cfg.DestinationConsulService)
 	if err != nil {
 		return nil, err
 	}
 	tcpProxyFilterConfig := &envoytcpproxy.TcpProxy{
+		StatPrefix: "outbound-tcp-proxy-"+destinationUpstream.Name,
 		Cluster: params.EnvoyNameForUpstream(destinationUpstream.Name),
 	}
 	tcpProxyFilterConfigStruct, err := protoutil.MarshalStruct(tcpProxyFilterConfig)
@@ -184,7 +190,8 @@ func (p *Plugin) outboundListenerFilters(params *plugins.ListenerFilterPluginPar
 }
 
 // TODO (ilackarms): support tags, structured queries, etc.
-func findUpstreamForService(upstreams []*v1.Upstream, serviceName string) (*v1.Upstream, error) {
+// TODO (ilackarms): revert to private when we break the translator dependency
+func FindUpstreamForService(upstreams []*v1.Upstream, serviceName string) (*v1.Upstream, error) {
 	for _, us := range upstreams {
 		if us.Type != consul.UpstreamTypeConsul {
 			continue
@@ -277,7 +284,7 @@ func createAuthFilter(authClusterName string, auth *AuthConfig) envoylistener.Fi
 		AuthorizeClusterName: authClusterName,
 		RequestTimeout:       auth.RequestTimeout,
 	}
-	filterConfigStruct, err := protoutil.MarshalStruct(filterConfig)
+	filterConfigStruct, err := util.MessageToStruct(filterConfig)
 	if err != nil {
 		panic("unexpected error marshalling proto to struct: " + err.Error())
 	}
