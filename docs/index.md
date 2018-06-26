@@ -15,10 +15,15 @@
 Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) and [Gloo](https://github.com/solo-io/gloo) to enable real time route authorization and response configuration management. Gloo Connect leverages Consul's Level 3/4 TCP authentication and Gloo's Level 7 function routing to provide a complete secure, observable, and configurable service delivery environment.
 <BR>
     
-## Features
-* **Low Latency Authentication**: Consul's credential management and Gloo Connect's plugins to Envoy combine to provide authentication with minimal overhead
-* **Deployment Flexibility**: Integrates with your exisiting infrastructure
-* **Secure Feature Release Management**: Function and request level configuration provides devops teams grainular real time control of feature deployment.
+## Gloo Connect Features
+### Consul Connect: Layer 3/4
+* **Security**: AuthN, AuthZ, intents, policy, mTLS
+* **Networking**: TCP routing 
+### Gloo Connect: Layer 7
+* **Security**: RBAC
+* **Observability**: Analytics, Monitoring, Debugging, Logging
+* **Traffic control**: Rate limit, Transformation, Compression, Caching
+* **Networking**: HTTP routing, serverless
 
 Blogs & Demos
 -----
