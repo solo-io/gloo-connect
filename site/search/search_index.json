@@ -1,0 +1,204 @@
+{
+    "docs": [
+        {
+            "location": "/",
+            "text": "The Codeless GraphQL Engine\n\n\n\n\nWhat is QLoo?\n\n\nQLoo is a GraphQL Server built on top of \nGloo\n and the \nEnvoy Proxy\n.\n\n\nQLoo leverages Gloo's function registry and Envoy's advanced HTTP routing features to provide a GraphQL frontend\nfor REST/gRPC applications and serverless functions. QLoo routes requests to data sources via Envoy, leveraging\nEnvoy \nHTTP filters\n\nfor security, load balancing, and more.\n\n\n\n\n\n\n\n\n\n\n\n\nWorkflow with QLoo\n\n\n\n\nRegister or Discovery API Endpoints and Serverless Functions with Gloo\n\n\nUpload a GraphQL schema\n\n\nConnect Functions to your Schema's fields in a QLoo ResolverMap\n\n\n\n\nFeatures\n\n\n\n\nCodeless GraphQL API\n: Instantly deploy a GraphQL server and connect it to your data sources with configuration,\n  zero code required.\n\n\nDynamic Load Balancing\n: Load balance traffic across multiple data sources.\n\n\nHealth Checks\n: Active and passive monitoring of your data sources.\n\n\nOpenTracing\n: Monitor GraphQL requests using the well-supported OpenTracing standard\n\n\nMonitoring\n: Export HTTP metrics to Prometheus or Statsd\n\n\nClient SSL\n: Communicate with Data Sources using TLS encryption\n\n\nDeclarative API\n: QLoo features a declarative YAML-based API; store your configuration as code and commit it with your projects.\n\n\nScalability\n: QLoo scales independently of your data sources and scales infinitely.\n\n\nPerformance\n: QLoo leverages Envoy for its high network performance and low footprint.\n\n\nPlugins\n: QLoo leverage's \nGloo's plugin ecosystem\n to enable extending the types\n  of data sources QLoo can connect to.\n\n\nJSON-to-gRPC transcoding\n: Connect GraphQL JSON clients to gRPC data sources.\n\n\n\n\nService Discovery\n:\n\n\n\n\nKubernetes\n\n\nOpenShift\n\n\nHashiCorp Stack (Vault, Consul, Nomad)\n\n\nCloud Foundry\n\n\n\n\nFunction Discovery\n:\n\n\n\n\nAWS Lambda\n\n\nMicrosoft Azure Functions\n\n\nGoogle Cloud Platform Functions\n\n\nFission\n\n\nOpenFaaS\n\n\nProjectFn\n\n\nSwagger/REST\n\n\ngRPC\n\n\n\n\nDocumentation\n\n\nInstallation:\n\n\n\n\nInstalling locally Docker-Compose\n: Installation guide for Docker-Compose (easiest way to get started)\n\n\nInstalling on Kubernetes\n: Installation guide for Kubernetes\n\n\n\n\nGetting Started:\n\n\n\n\nGetting Started on Docker-Compose\n: Getting started with Docker (recommended for first time users)\n\n\nGetting Started on Kubernetes\n: Getting started with Kubernetes (recommended for first time users)\n\n\n\n\nv1 API reference:\n\n\n\n\nSchemas\n: API Specification for proving your GraphQL Schemas to QLoo\n\n\nResolverMaps\n: API Reference for ResolverMaps, which map your data sources to your Schemas\n\n\n\n\nBlogs & Demos\n\n\n\n\nAnnouncement Blog\n\n\n\n\nCommunity\n\n\nJoin us on our slack channel: \nhttps://slack.solo.io/\n\n\n\n\nThanks\n\n\nQLoo\n would not be possible without the valuable open-source work of projects in the community. We would like to extend\na special thank-you to \nEnvoy\n and \ngqlgen\n server library.",
+            "title": "Index"
+        },
+        {
+            "location": "/#what-is-qloo",
+            "text": "QLoo is a GraphQL Server built on top of  Gloo  and the  Envoy Proxy .  QLoo leverages Gloo's function registry and Envoy's advanced HTTP routing features to provide a GraphQL frontend\nfor REST/gRPC applications and serverless functions. QLoo routes requests to data sources via Envoy, leveraging\nEnvoy  HTTP filters \nfor security, load balancing, and more.",
+            "title": "What is QLoo?"
+        },
+        {
+            "location": "/#workflow-with-qloo",
+            "text": "Register or Discovery API Endpoints and Serverless Functions with Gloo  Upload a GraphQL schema  Connect Functions to your Schema's fields in a QLoo ResolverMap",
+            "title": "Workflow with QLoo"
+        },
+        {
+            "location": "/#features",
+            "text": "Codeless GraphQL API : Instantly deploy a GraphQL server and connect it to your data sources with configuration,\n  zero code required.  Dynamic Load Balancing : Load balance traffic across multiple data sources.  Health Checks : Active and passive monitoring of your data sources.  OpenTracing : Monitor GraphQL requests using the well-supported OpenTracing standard  Monitoring : Export HTTP metrics to Prometheus or Statsd  Client SSL : Communicate with Data Sources using TLS encryption  Declarative API : QLoo features a declarative YAML-based API; store your configuration as code and commit it with your projects.  Scalability : QLoo scales independently of your data sources and scales infinitely.  Performance : QLoo leverages Envoy for its high network performance and low footprint.  Plugins : QLoo leverage's  Gloo's plugin ecosystem  to enable extending the types\n  of data sources QLoo can connect to.  JSON-to-gRPC transcoding : Connect GraphQL JSON clients to gRPC data sources.   Service Discovery :   Kubernetes  OpenShift  HashiCorp Stack (Vault, Consul, Nomad)  Cloud Foundry   Function Discovery :   AWS Lambda  Microsoft Azure Functions  Google Cloud Platform Functions  Fission  OpenFaaS  ProjectFn  Swagger/REST  gRPC",
+            "title": "Features"
+        },
+        {
+            "location": "/#documentation",
+            "text": "",
+            "title": "Documentation"
+        },
+        {
+            "location": "/#installation",
+            "text": "Installing locally Docker-Compose : Installation guide for Docker-Compose (easiest way to get started)  Installing on Kubernetes : Installation guide for Kubernetes",
+            "title": "Installation:"
+        },
+        {
+            "location": "/#getting-started",
+            "text": "Getting Started on Docker-Compose : Getting started with Docker (recommended for first time users)  Getting Started on Kubernetes : Getting started with Kubernetes (recommended for first time users)",
+            "title": "Getting Started:"
+        },
+        {
+            "location": "/#v1-api-reference",
+            "text": "Schemas : API Specification for proving your GraphQL Schemas to QLoo  ResolverMaps : API Reference for ResolverMaps, which map your data sources to your Schemas",
+            "title": "v1 API reference:"
+        },
+        {
+            "location": "/#blogs-demos",
+            "text": "Announcement Blog",
+            "title": "Blogs &amp; Demos"
+        },
+        {
+            "location": "/#community",
+            "text": "Join us on our slack channel:  https://slack.solo.io/",
+            "title": "Community"
+        },
+        {
+            "location": "/#thanks",
+            "text": "QLoo  would not be possible without the valuable open-source work of projects in the community. We would like to extend\na special thank-you to  Envoy  and  gqlgen  server library.",
+            "title": "Thanks"
+        },
+        {
+            "location": "/introduction/introduction/",
+            "text": "Introduction\n\n\nWhat is QLoo?\n\n\nQLoo is a GraphQL Server built on top of \nGloo\n and the \nEnvoy Proxy\n.\n\n\nQLoo leverages Gloo's function registry and Envoy's advanced HTTP routing features to provide a GraphQL frontend\nfor REST/gRPC applications and serverless functions. QLoo routes requests to data sources via Envoy, leveraging \nEnvoy \nHTTP filters\n \nfor security, load balancing, and more.\n\n\nQLoo makes HTTP requests through Gloo to invoke service endpoints and serverless functions through Gloo. QLoo users\nimport their GraphQL Schemas and attach \nGloo functions\n to the fields of their schemas. QLoo uses Gloo functions to generate\nits own resolvers, allowing users to get a fully-functional GraphQL frontend for their serverless functions and services \nwithout writing any code. This is why we call QLoo the \nCodeless GraphQL Server\n.\n\n\nUsing QLoo\n\n\nCompared to typical GraphQL implementations, QLoo's configuration API is quite simple. Configuration takes two steps:",
+            "title": "Introduction"
+        },
+        {
+            "location": "/introduction/introduction/#introduction",
+            "text": "",
+            "title": "Introduction"
+        },
+        {
+            "location": "/introduction/introduction/#what-is-qloo",
+            "text": "QLoo is a GraphQL Server built on top of  Gloo  and the  Envoy Proxy .  QLoo leverages Gloo's function registry and Envoy's advanced HTTP routing features to provide a GraphQL frontend\nfor REST/gRPC applications and serverless functions. QLoo routes requests to data sources via Envoy, leveraging \nEnvoy  HTTP filters  \nfor security, load balancing, and more.  QLoo makes HTTP requests through Gloo to invoke service endpoints and serverless functions through Gloo. QLoo users\nimport their GraphQL Schemas and attach  Gloo functions  to the fields of their schemas. QLoo uses Gloo functions to generate\nits own resolvers, allowing users to get a fully-functional GraphQL frontend for their serverless functions and services \nwithout writing any code. This is why we call QLoo the  Codeless GraphQL Server .",
+            "title": "What is QLoo?"
+        },
+        {
+            "location": "/introduction/introduction/#using-qloo",
+            "text": "Compared to typical GraphQL implementations, QLoo's configuration API is quite simple. Configuration takes two steps:",
+            "title": "Using QLoo"
+        },
+        {
+            "location": "/introduction/overview/",
+            "text": "ResolverMaps\n\n\nStorage-Based API\n\n\nQLoo, like \nGloo\n, features a storage-based API. Inspired by Kubernetes, QLoo's API is accessed \nby applications and users by reading and writing API objects to a storage layer QLoo is configured (at boot-time) to monitor\nfor changes. Currently supported storage backends are \nKubernetes CRDs\n, \n\nConsul Key-Value Pairs\n, or QLoo's local filesystem. \n\n\nAPI Objects\n\n\nQLoo's API Objects take two forms:",
+            "title": "Overview"
+        },
+        {
+            "location": "/introduction/overview/#resolvermaps",
+            "text": "",
+            "title": "ResolverMaps"
+        },
+        {
+            "location": "/introduction/overview/#storage-based-api",
+            "text": "QLoo, like  Gloo , features a storage-based API. Inspired by Kubernetes, QLoo's API is accessed \nby applications and users by reading and writing API objects to a storage layer QLoo is configured (at boot-time) to monitor\nfor changes. Currently supported storage backends are  Kubernetes CRDs ,  Consul Key-Value Pairs , or QLoo's local filesystem.",
+            "title": "Storage-Based API"
+        },
+        {
+            "location": "/introduction/overview/#api-objects",
+            "text": "QLoo's API Objects take two forms:",
+            "title": "API Objects"
+        },
+        {
+            "location": "/introduction/architecture/",
+            "text": "Architecture\n\n\nThe Architecture of QLoo can be understood as follows:\n\n\nQLoo users interact via the \nStorage Layer API\n.\n\n\nwritten by the User (usually via \nqlooctl\n, the QLoo CLI) and polled by QLoo.\n\n\nWhen QLoo detects an update to an API Object, it re-syncs its state to match\nthe user specified configuration.\n\n\nQLoo is composed of two components: a GraphQL service and an Envoy Proxy functioning as a sidecar. Rather than manually configuring\nits own sidecar, QLoo directs Envoy to connect to Gloo as its \ncontrol plane\n, \nallowing QLoo to leverage \nGloo's large set of HTTP routing features\n.\n\n\nto handle service discovery, \nGloo plugin configuration\n, and configuration of \n\nEnvoy HTTP Filters\n\n\nOnce Gloo has applied the desired configuration to Envoy, QLoo begins listening for incoming GraphQL requests, serving queries",
+            "title": "Architecture"
+        },
+        {
+            "location": "/introduction/architecture/#architecture",
+            "text": "The Architecture of QLoo can be understood as follows:  QLoo users interact via the  Storage Layer API .  written by the User (usually via  qlooctl , the QLoo CLI) and polled by QLoo.  When QLoo detects an update to an API Object, it re-syncs its state to match\nthe user specified configuration.  QLoo is composed of two components: a GraphQL service and an Envoy Proxy functioning as a sidecar. Rather than manually configuring\nits own sidecar, QLoo directs Envoy to connect to Gloo as its  control plane , \nallowing QLoo to leverage  Gloo's large set of HTTP routing features .  to handle service discovery,  Gloo plugin configuration , and configuration of  Envoy HTTP Filters  Once Gloo has applied the desired configuration to Envoy, QLoo begins listening for incoming GraphQL requests, serving queries",
+            "title": "Architecture"
+        },
+        {
+            "location": "/installation/kubernetes/",
+            "text": "Installing on Kubernetes\n\n\nInstalling with \nkubectl\n\n\nWhat you'll need\n\n\n\n\nKubernetes v1.8+ or higher deployed. We recommend using \nminikube\n to get a demo cluster up quickly.\n\n\nkubectl\n installed on your local machine.\n\n\n\n\nOnce your Kubernetes cluster is up and running, run the following command to deploy QLoo and Gloo to the \ngloo-system\n namespace:\n\n\n# install Gloo\nkubectl apply -f \\\n    https://raw.githubusercontent.com/solo-io/gloo/master/install/kube/install.yaml\n\n# install QLoo\nkubectl apply -f \\\n    https://raw.githubusercontent.com/solo-io/qloo/master/install/kube/install.yaml\n\n\n\n\nInstalling with \nqlooctl\n\n\nWhat you'll need\n\n\n\n\nKubernetes v1.8+ or higher deployed. We recommend using \nminikube\n to get a demo cluster up quickly.\n\n\nkubectl\n installed on your local machine.\n\n\nqlooctl\n installed on your local machine.\n\n\n\n\nOnce your Kubernetes cluster is up and running, run the following command to deploy QLoo and Gloo to the \ngloo-system\n namespace:\n\n\nqlooctl install kube \n\n\n\n\nConfirming the installation\n\n\nCheck that the Gloo pods and services have been created:\n\n\nkubectl get all -n gloo-system\nNAME                                           READY     STATUS    RESTARTS   AGE\npod/control-plane-757bd75db7-9vw59             1/1       Running   0          2h\npod/function-discovery-7df6bd4fcd-26rx8        1/1       Running   0          2h\npod/ingress-77c7bd6577-kdgdd                   1/1       Running   0          2h\npod/kube-ingress-controller-78bfc4c84d-8tvjr   1/1       Running   0          2h\npod/qloo-6b79fdc655-n7j6n                      2/2       Running   0          2h\npod/upstream-discovery-59bc6f7889-g65z6        1/1       Running   0          2h\n\nNAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE\nservice/control-plane   ClusterIP      10.96.24.217     <none>        8081/TCP                        3h\nservice/ingress         LoadBalancer   10.111.152.102   <pending>     8080:31972/TCP,8443:30576/TCP   3h\nservice/qloo            LoadBalancer   10.106.92.208    <pending>     9090:31470/TCP                  3h\n\nNAME                                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE\ndeployment.apps/control-plane             1         1         1            1           3h\ndeployment.apps/function-discovery        1         1         1            1           3h\ndeployment.apps/ingress                   1         1         1            1           3h\ndeployment.apps/kube-ingress-controller   1         1         1            1           3h\ndeployment.apps/qloo                      1         1         1            1           3h\ndeployment.apps/upstream-discovery        1         1         1            1           3h\n\nNAME                                                 DESIRED   CURRENT   READY     AGE\nreplicaset.apps/control-plane-757bd75db7             1         1         1         3h\nreplicaset.apps/function-discovery-7df6bd4fcd        1         1         1         3h\nreplicaset.apps/ingress-77c7bd6577                   1         1         1         3h\nreplicaset.apps/kube-ingress-controller-78bfc4c84d   1         1         1         3h\nreplicaset.apps/qloo-6b79fdc655                      1         1         1         3h\nreplicaset.apps/upstream-discovery-59bc6f7889        1         1         1         3h\n\n\n\n\nEverything should be up and running. If this process does not work, please \nopen an issue\n. We are happy to answer\nquestions on our \ndiligently staffed Slack channel\n.\n\n\nSee \nGetting Started on Kubernetes\n to get started creating your first GraphQL endpoint with QLoo.",
+            "title": "Installing on Kubernetes"
+        },
+        {
+            "location": "/installation/kubernetes/#installing-on-kubernetes",
+            "text": "",
+            "title": "Installing on Kubernetes"
+        },
+        {
+            "location": "/installation/kubernetes/#installing-with-kubectl",
+            "text": "",
+            "title": "Installing with kubectl"
+        },
+        {
+            "location": "/installation/kubernetes/#what-youll-need",
+            "text": "Kubernetes v1.8+ or higher deployed. We recommend using  minikube  to get a demo cluster up quickly.  kubectl  installed on your local machine.   Once your Kubernetes cluster is up and running, run the following command to deploy QLoo and Gloo to the  gloo-system  namespace:  # install Gloo\nkubectl apply -f \\\n    https://raw.githubusercontent.com/solo-io/gloo/master/install/kube/install.yaml\n\n# install QLoo\nkubectl apply -f \\\n    https://raw.githubusercontent.com/solo-io/qloo/master/install/kube/install.yaml",
+            "title": "What you'll need"
+        },
+        {
+            "location": "/installation/kubernetes/#installing-with-qlooctl",
+            "text": "",
+            "title": "Installing with qlooctl"
+        },
+        {
+            "location": "/installation/kubernetes/#what-youll-need_1",
+            "text": "Kubernetes v1.8+ or higher deployed. We recommend using  minikube  to get a demo cluster up quickly.  kubectl  installed on your local machine.  qlooctl  installed on your local machine.   Once your Kubernetes cluster is up and running, run the following command to deploy QLoo and Gloo to the  gloo-system  namespace:  qlooctl install kube",
+            "title": "What you'll need"
+        },
+        {
+            "location": "/installation/kubernetes/#confirming-the-installation",
+            "text": "Check that the Gloo pods and services have been created:  kubectl get all -n gloo-system\nNAME                                           READY     STATUS    RESTARTS   AGE\npod/control-plane-757bd75db7-9vw59             1/1       Running   0          2h\npod/function-discovery-7df6bd4fcd-26rx8        1/1       Running   0          2h\npod/ingress-77c7bd6577-kdgdd                   1/1       Running   0          2h\npod/kube-ingress-controller-78bfc4c84d-8tvjr   1/1       Running   0          2h\npod/qloo-6b79fdc655-n7j6n                      2/2       Running   0          2h\npod/upstream-discovery-59bc6f7889-g65z6        1/1       Running   0          2h\n\nNAME                    TYPE           CLUSTER-IP       EXTERNAL-IP   PORT(S)                         AGE\nservice/control-plane   ClusterIP      10.96.24.217     <none>        8081/TCP                        3h\nservice/ingress         LoadBalancer   10.111.152.102   <pending>     8080:31972/TCP,8443:30576/TCP   3h\nservice/qloo            LoadBalancer   10.106.92.208    <pending>     9090:31470/TCP                  3h\n\nNAME                                      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE\ndeployment.apps/control-plane             1         1         1            1           3h\ndeployment.apps/function-discovery        1         1         1            1           3h\ndeployment.apps/ingress                   1         1         1            1           3h\ndeployment.apps/kube-ingress-controller   1         1         1            1           3h\ndeployment.apps/qloo                      1         1         1            1           3h\ndeployment.apps/upstream-discovery        1         1         1            1           3h\n\nNAME                                                 DESIRED   CURRENT   READY     AGE\nreplicaset.apps/control-plane-757bd75db7             1         1         1         3h\nreplicaset.apps/function-discovery-7df6bd4fcd        1         1         1         3h\nreplicaset.apps/ingress-77c7bd6577                   1         1         1         3h\nreplicaset.apps/kube-ingress-controller-78bfc4c84d   1         1         1         3h\nreplicaset.apps/qloo-6b79fdc655                      1         1         1         3h\nreplicaset.apps/upstream-discovery-59bc6f7889        1         1         1         3h  Everything should be up and running. If this process does not work, please  open an issue . We are happy to answer\nquestions on our  diligently staffed Slack channel .  See  Getting Started on Kubernetes  to get started creating your first GraphQL endpoint with QLoo.",
+            "title": "Confirming the installation"
+        },
+        {
+            "location": "/getting_started/tmp2/",
+            "text": "Getting Started on Kubernetes\n\n\nWhat you'll need\n\n\n\n\nkubectl\n\n\nqlooctl\n\n\nglooctl\n: (OPTIONAL) to see how QLoo is interacting with the underlying system\n\n\nKubernetes v1.8+ deployed somewhere. \nMinikube\n is a great way to get a cluster up quickly.\n\n\n\n\nSteps\n\n\nDeploy QLoo and Gloo\n\n\n    qlooctl install kube\n\n\n\nDeploy the Pet Store\n\n\n    kubectl apply \\\n      -f https://raw.githubusercontent.com/solo-io/gloo/master/example/petstore/petstore.yaml\n\n\n\nOPTIONAL: View the petstore functions using \nglooctl\n:\n\n\n    glooctl upstream get\n\n    +--------------------------------+------------+----------+-------------+\n    |              NAME              |    TYPE    |  STATUS  |  FUNCTION   |\n    +--------------------------------+------------+----------+-------------+\n    | default-petstore-8080          | kubernetes | Accepted | addPet      |\n    |                                |            |          | deletePet   |\n    |                                |            |          | findPetById |\n    |                                |            |          | findPets    |\n    | gloo-system-control-plane-8081 | kubernetes | Accepted |             |\n    | gloo-system-ingress-8080       | kubernetes | Accepted |             |\n    | gloo-system-ingress-8443       | kubernetes | Accepted |             |\n    +--------------------------------+------------+----------+-------------+\n\n\n\nThe upstream we want to see is \ndefault-petstore-8080\n. The functions \naddPet\n, \ndeletePet\n, \nfindPetById\n, and \nfindPets\n\nwill become the resolvers for our GraphQL schema.  \n\n\nCreate a GraphQL Schema\n\n\nCopy and paste the following schema into \npetstore.graphql\n (or wherever you like):\n\n\n# The query type, represents all of the entry points into our object graph\ntype Query {\n    pets: [Pet]\n    pet(id: Int!): Pet\n}\n\ntype Mutation {\n    addPet(pet: InputPet!): Pet\n}\n\ntype Pet{\n    id: ID!\n    name: String!\n    status: Status!\n}\n\ninput InputPet{\n    id: ID!\n    name: String!\n    tag: String\n}\n\nenum Status {\n    pending\n    available\n}\n\n\n\n\nUpload the Schema\n\n\nUpload the schema to QLoo using \nqlooctl\n:\n\n\nqlooctl schema create petstore -f petstore.graphql\n\n\n\n\nOPTIONAL: View the Generated Resolvers\n\n\nA QLoo \nResolverMap\n will have been generated\nfor the new schema.\n\n\nTake a look at its structure:\n\n\nqlooctl resolvermap get petstore-resolvers -o yaml\n\nmetadata:\n  namespace: gloo-system\n  resource_version: \"573676\"\nname: petstore-resolvers\nstatus:\n  state: Accepted\ntypes:\n  Mutation:\n    fields:\n      addPet: {}\n  Pet:\n    fields:\n      id: {}\n      name: {}\n      status: {}\n  Query:\n    fields:\n      pet: {}\n      pets: {}\n\n\n\n\nThe empty \n{}\n's are QLoo \nResolver\n\nobjects, waiting to be filled in. QLoo supports a variety of Resolver types (and supports extension to its\nresolution system). In this tutorial, we will create Gloo resolvers, which allow you to connect schema fields\nto REST APIs, serverless functions and other Gloo functions. \n\n\nRegister some Resolvers\n\n\nLet's use \nqlooctl\n to register some resolvers.\n\n\n# register findPetById for Query.pets (specifying no arguments)\nqlooctl resolvermap register -u default-petstore-8080 -f findPetById Query pets\n# register a resolver for Query.pet\nqlooctl resolvermap register -u default-petstore-8080 -f findPetById Query pet\n# register a resolver for Mutation.addPet\n# the request template tells QLoo to use the Variable \"pet\" as an argument \nqlooctl resolvermap register -u default-petstore-8080 -f addPet Mutation addPet --request-template '{{ marshal (index .Args \"pet\") }}'\n\n\n\n\nThat's it! Now we should have a functioning GraphQL frontend for our REST service.\n\n\nVisit the Playground\n\n\nVisit the exposed address of the \nqloo\n service in your browser.\n\n\nIf you're running in minkube, you can get this address with the command\n\n\necho http://$(minikube ip):$(kubectl get svc qloo -n gloo-system -o 'jsonpath={.spec.ports[?(@.name==\"http\")].nodePort}')\n\nhttp://192.168.39.47:30935/\n\n\n\n\nYou should see a landing page for QLoo which contains a link to the GraphQL Playground for our\nPet Store. Visit it and try out some queries!\n\n\nexamples:\n\n\n{\n  pet(id:1 ) {\n    name\n  }\n}\n\n\n\n\n\u2193\n\n\n{\n  \"data\": {\n    \"pet\": {\n      \"name\": \"Dog\"\n    }\n  }\n}\n\n\n\n\n{\n  pets {\n    name\n  }\n}\n\n\n\n\n\u2193\n\n\n{\n  \"data\": {\n    \"pets\": [\n      {\n        \"name\": \"Dog\"\n      },\n      {\n        \"name\": \"Cat\"\n      }\n    ]\n  }\n}\n\n\n\n\nmutation($pet: InputPet!) {\n  addPet(pet: $pet) {\n    id\n    name\n  }\n}\n\n\n\n\nwith input variable\n\n\n{\n  \"pet\":{\n    \"id\":3,\n    \"name\": \"monkey\"\n  }\n}\n\n\n\n\n\u2193\n\n\n{\n  \"data\": {\n    \"addPet\": {\n      \"name\": \"monkey\"\n    }\n  }\n}",
+            "title": "Kubernetes"
+        },
+        {
+            "location": "/getting_started/tmp2/#getting-started-on-kubernetes",
+            "text": "",
+            "title": "Getting Started on Kubernetes"
+        },
+        {
+            "location": "/getting_started/tmp2/#what-youll-need",
+            "text": "kubectl  qlooctl  glooctl : (OPTIONAL) to see how QLoo is interacting with the underlying system  Kubernetes v1.8+ deployed somewhere.  Minikube  is a great way to get a cluster up quickly.",
+            "title": "What you'll need"
+        },
+        {
+            "location": "/getting_started/tmp2/#steps",
+            "text": "",
+            "title": "Steps"
+        },
+        {
+            "location": "/getting_started/tmp2/#deploy-qloo-and-gloo",
+            "text": "qlooctl install kube",
+            "title": "Deploy QLoo and Gloo"
+        },
+        {
+            "location": "/getting_started/tmp2/#deploy-the-pet-store",
+            "text": "kubectl apply \\\n      -f https://raw.githubusercontent.com/solo-io/gloo/master/example/petstore/petstore.yaml",
+            "title": "Deploy the Pet Store"
+        },
+        {
+            "location": "/getting_started/tmp2/#optional-view-the-petstore-functions-using-glooctl",
+            "text": "glooctl upstream get\n\n    +--------------------------------+------------+----------+-------------+\n    |              NAME              |    TYPE    |  STATUS  |  FUNCTION   |\n    +--------------------------------+------------+----------+-------------+\n    | default-petstore-8080          | kubernetes | Accepted | addPet      |\n    |                                |            |          | deletePet   |\n    |                                |            |          | findPetById |\n    |                                |            |          | findPets    |\n    | gloo-system-control-plane-8081 | kubernetes | Accepted |             |\n    | gloo-system-ingress-8080       | kubernetes | Accepted |             |\n    | gloo-system-ingress-8443       | kubernetes | Accepted |             |\n    +--------------------------------+------------+----------+-------------+  The upstream we want to see is  default-petstore-8080 . The functions  addPet ,  deletePet ,  findPetById , and  findPets \nwill become the resolvers for our GraphQL schema.",
+            "title": "OPTIONAL: View the petstore functions using glooctl:"
+        },
+        {
+            "location": "/getting_started/tmp2/#create-a-graphql-schema",
+            "text": "Copy and paste the following schema into  petstore.graphql  (or wherever you like):  # The query type, represents all of the entry points into our object graph\ntype Query {\n    pets: [Pet]\n    pet(id: Int!): Pet\n}\n\ntype Mutation {\n    addPet(pet: InputPet!): Pet\n}\n\ntype Pet{\n    id: ID!\n    name: String!\n    status: Status!\n}\n\ninput InputPet{\n    id: ID!\n    name: String!\n    tag: String\n}\n\nenum Status {\n    pending\n    available\n}",
+            "title": "Create a GraphQL Schema"
+        },
+        {
+            "location": "/getting_started/tmp2/#upload-the-schema",
+            "text": "Upload the schema to QLoo using  qlooctl :  qlooctl schema create petstore -f petstore.graphql",
+            "title": "Upload the Schema"
+        },
+        {
+            "location": "/getting_started/tmp2/#optional-view-the-generated-resolvers",
+            "text": "A QLoo  ResolverMap  will have been generated\nfor the new schema.  Take a look at its structure:  qlooctl resolvermap get petstore-resolvers -o yaml\n\nmetadata:\n  namespace: gloo-system\n  resource_version: \"573676\"\nname: petstore-resolvers\nstatus:\n  state: Accepted\ntypes:\n  Mutation:\n    fields:\n      addPet: {}\n  Pet:\n    fields:\n      id: {}\n      name: {}\n      status: {}\n  Query:\n    fields:\n      pet: {}\n      pets: {}  The empty  {} 's are QLoo  Resolver \nobjects, waiting to be filled in. QLoo supports a variety of Resolver types (and supports extension to its\nresolution system). In this tutorial, we will create Gloo resolvers, which allow you to connect schema fields\nto REST APIs, serverless functions and other Gloo functions.",
+            "title": "OPTIONAL: View the Generated Resolvers"
+        },
+        {
+            "location": "/getting_started/tmp2/#register-some-resolvers",
+            "text": "Let's use  qlooctl  to register some resolvers.  # register findPetById for Query.pets (specifying no arguments)\nqlooctl resolvermap register -u default-petstore-8080 -f findPetById Query pets\n# register a resolver for Query.pet\nqlooctl resolvermap register -u default-petstore-8080 -f findPetById Query pet\n# register a resolver for Mutation.addPet\n# the request template tells QLoo to use the Variable \"pet\" as an argument \nqlooctl resolvermap register -u default-petstore-8080 -f addPet Mutation addPet --request-template '{{ marshal (index .Args \"pet\") }}'  That's it! Now we should have a functioning GraphQL frontend for our REST service.",
+            "title": "Register some Resolvers"
+        },
+        {
+            "location": "/getting_started/tmp2/#visit-the-playground",
+            "text": "Visit the exposed address of the  qloo  service in your browser.  If you're running in minkube, you can get this address with the command  echo http://$(minikube ip):$(kubectl get svc qloo -n gloo-system -o 'jsonpath={.spec.ports[?(@.name==\"http\")].nodePort}')\n\nhttp://192.168.39.47:30935/  You should see a landing page for QLoo which contains a link to the GraphQL Playground for our\nPet Store. Visit it and try out some queries!  examples:  {\n  pet(id:1 ) {\n    name\n  }\n}  \u2193  {\n  \"data\": {\n    \"pet\": {\n      \"name\": \"Dog\"\n    }\n  }\n}  {\n  pets {\n    name\n  }\n}  \u2193  {\n  \"data\": {\n    \"pets\": [\n      {\n        \"name\": \"Dog\"\n      },\n      {\n        \"name\": \"Cat\"\n      }\n    ]\n  }\n}  mutation($pet: InputPet!) {\n  addPet(pet: $pet) {\n    id\n    name\n  }\n}  with input variable  {\n  \"pet\":{\n    \"id\":3,\n    \"name\": \"monkey\"\n  }\n}  \u2193  {\n  \"data\": {\n    \"addPet\": {\n      \"name\": \"monkey\"\n    }\n  }\n}",
+            "title": "Visit the Playground"
+        }
+    ]
+}
