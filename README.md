@@ -3,7 +3,7 @@
 <h1 align="center">
     <img src="docs/GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
-  Request-Authentication-Logging-Routing-Response
+  Connect, Secure, Manage and Monitor your Services 
 </h1>
 
 ### What is Gloo Connect?
