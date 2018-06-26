@@ -12,7 +12,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 
 <BR>
 <p align="center">
-    <img src="docs/figures/GlooConnect.png" alt="GlooConnect" width="50" height="28">
+    <img src="docs/figures/overview.png" alt="GlooConnect_overview" width="800" height="500">
 </p>
 <BR>
     
@@ -21,6 +21,13 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 * **Low Latency Authentication**: Consul's credential management and Gloo Connect's plugins to Envoy combine to provide authentication with minimal overhead
 * **Deployment Flexibility**: Integrates with your exisiting infrastructure
 * **Secure Feature Release Management**: Function and request level configuration provides devops teams grainular real time control of feature deployment.
+
+## Architecture Overview
+<BR>
+<p align="center">
+    <img src="docs/figures/architecture.png" alt="GlooConnect_architecture" width="800" height="500">
+</p>
+<BR>
 
 ## Documentation
 * [Gloo Connect Documentation](https://glooconnect.solo.io)
