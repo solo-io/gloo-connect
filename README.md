@@ -1,7 +1,7 @@
 
 
 <h1 align="center">
-    <img src="docs/GlooConnect.png" alt="GlooConnect" width="496" height="280">
+    <img src="docs/GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
   Request-Authentication-Logging-Routing-Response
 </h1>
