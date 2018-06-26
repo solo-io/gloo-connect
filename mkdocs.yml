@@ -5,6 +5,14 @@ pages:
       - Introduction: introduction/introduction.md
       - Overview: introduction/overview.md
       - Architecture: introduction/architecture.md
+<<<<<<< HEAD
+=======
+    - Installation:
+      - Installing on Kubernetes: installation/kubernetes.md
+    - Getting Started:
+      - Kubernetes: getting_started/tmp2.md
+
+>>>>>>> f56c1ea... architecture section
 repo_url: https://github.com/solo-io/qloo/
 site_author: gloo Project Authors
 copyright: © Copyright 2018, solo.io Inc.
