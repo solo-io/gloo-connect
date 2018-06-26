@@ -1,9 +1,7 @@
-
-
 <h1 align="center">
-    <img src="GlooConnect.png" alt="GlooConnect" width="496" height="280">
+    <img src="GlooConnect.png" alt="GlooConnect" width="450" height="280">
   <br>
-  The Codeless GraphQL Engine
+  The Envoy Filter for Consul Connect
 </h1>
 
 ### What is Gloo Connect?
