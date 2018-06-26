@@ -417,17 +417,18 @@
                 
                 
                 <h1 id="architecture">Architecture</h1>
-<p>The Architecture of QLoo can be understood as follows:</p>
-<p>QLoo users interact via the <a href="https://github.com/solo-io/qloo/tree/master/pkg/storage">Storage Layer API</a>.</p>
-<p>written by the User (usually via <code>qlooctl</code>, the QLoo CLI) and polled by QLoo.</p>
-<p>When QLoo detects an update to an API Object, it re-syncs its state to match
-the user specified configuration.</p>
-<p>QLoo is composed of two components: a GraphQL service and an Envoy Proxy functioning as a sidecar. Rather than manually configuring
-its own sidecar, QLoo directs Envoy to connect to Gloo as its <a href="https://github.com/envoyproxy/data-plane-api/blob/master/XDS_PROTOCOL.md">control plane</a>, 
-allowing QLoo to leverage <a href="https://gloo.solo.io/#features">Gloo's large set of HTTP routing features</a>.</p>
-<p>to handle service discovery, <a href="https://gloo.solo.io/plugins/aws/">Gloo plugin configuration</a>, and configuration of 
-<a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/http_filters.html">Envoy HTTP Filters</a></p>
-<p>Once Gloo has applied the desired configuration to Envoy, QLoo begins listening for incoming GraphQL requests, serving queries </p>
+<p>The architecture of Gloo Connect can be understood as follows:</p>
+<p><img alt="Architecture" src="../architecture-gloo-connect.png" title="Gloo Connect Architecture" /></p>
+<p>A new service with connect settings is added to Consul using Gloo Connect as a managed proxy. </p>
+<p>Consul then initiates the Gloo-Consul Bridge process, where Gloo-Consul Bridge retrieves certificates and configuration information from Consul. Certificates are then written to disk to make them available to Envoy.</p>
+<p>In the near future, certificates will be delivered directly to Envoy over SDS and not written to disk. This process configures Envoy with the control plane settings and starts it. </p>
+<p>Gloo Connect constantly monitors Consul Connect and updates the control plane whenever changes are detected and Envoy is hot-restarted. Envoy receives configuration from the Gloo Connect control plane and serves mesh data!</p>
+<p>The data flows as follows: </p>
+<ol>
+<li>A request arrives from the mesh to the local Envoy.</li>
+<li>Gloo Connect filter checks if the connection is authorized with the local agent.</li>
+<li>If the request is authorized by the agent it is forwarded to the service.</li>
+</ol>
                 
                   
                 

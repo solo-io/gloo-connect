@@ -1,5 +1,11 @@
-<h1 align="center">
+<!-- <h1 align="center">
     <img src="GlooConnect.png" alt="GlooConnect" width="450" height="280">
+  <br>
+  The Envoy Filter for Consul Connect
+</h1> -->
+
+<h1 align="center">
+    <img src="GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
   The Envoy Filter for Consul Connect
 </h1>
@@ -20,11 +26,12 @@ Blogs & Demos
 
 Community
 -----
+
 Join us on our slack channel: [https://slack.solo.io/](https://slack.solo.io/)
 
 ---
 
 ### Thanks
 
-**QLoo** would not be possible without the valuable open-source work of projects in the community. We would like to extend 
-a special thank-you to [Envoy](https://www.envoyproxy.io) and [gqlgen](https://github.com/vektah/gqlgen) server library.
+
+**QLoo** would not be possible without the valuable open-source work of projects in the community. We would like to extend a special thank-you to [Envoy](https://www.envoyproxy.io) and [gqlgen](https://github.com/vektah/gqlgen) server library.
