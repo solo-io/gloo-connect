@@ -1,19 +1,11 @@
-site_name: GLoo connect
+site_name: Gloo Connect
 pages:
     - Index: index.md
     - Introduction:
       - Introduction: introduction/introduction.md
       - Overview: introduction/overview.md
       - Architecture: introduction/architecture.md
-<<<<<<< HEAD
-=======
-    - Installation:
-      - Installing on Kubernetes: installation/kubernetes.md
-    - Getting Started:
-      - Kubernetes: getting_started/tmp2.md
-
->>>>>>> f56c1ea... architecture section
-repo_url: https://github.com/solo-io/qloo/
+repo_url: https://github.com/solo-io/gloo-connect
 site_author: gloo Project Authors
 copyright: © Copyright 2018, solo.io Inc.
 google_analytics: ['UA-101654320-1', 'glooconnect.solo.io']
