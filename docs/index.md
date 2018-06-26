@@ -1,13 +1,13 @@
 <!-- <h1 align="center">
     <img src="GlooConnect.png" alt="GlooConnect" width="450" height="280">
   <br>
-  The Envoy Filter for Consul Connect
+  The Consul-Native Service Mesh
 </h1> -->
 
 <h1 align="center">
     <img src="GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
-  The Consul-Native Service Fabric
+  The Consul-Native Service Mesh
 </h1>
 
 ### What is Gloo Connect?
