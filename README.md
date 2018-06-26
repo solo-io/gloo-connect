@@ -24,7 +24,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 ### Gloo Connect: Layer 7
 * **Security**: RBAC
 * **Observability**: Analytics, Monitoring, Debugging, Logging
-* **Traffic control**: Rate limit, Transformation, Compression, Caching
+* **Traffic control**: Rate limit, Transformation, Compression, Caching, Retries, Canary deployment
 * **Networking**: HTTP routing, serverless
 <BR>
     
