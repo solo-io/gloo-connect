@@ -10,9 +10,9 @@ import (
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/hashicorp/consul/api"
-	"github.com/solo-io/gloo-consul-bridge/pkg/consul"
-	"github.com/solo-io/gloo-consul-bridge/pkg/envoy"
-	"github.com/solo-io/gloo-consul-bridge/pkg/gloo"
+	"github.com/solo-io/gloo-connect/pkg/consul"
+	"github.com/solo-io/gloo-connect/pkg/envoy"
+	"github.com/solo-io/gloo-connect/pkg/gloo"
 	"github.com/solo-io/gloo/pkg/storage"
 )
 

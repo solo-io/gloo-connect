@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/solo-io/gloo-consul-bridge/pkg/runner"
+	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap"
+	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
 	"github.com/solo-io/gloo/pkg/bootstrap/flags"
 	"github.com/spf13/cobra"
-	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
 )
 
 func main() {

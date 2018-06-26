@@ -15,7 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	// . "github.com/solo-io/gloo-consul-bridge/e2e"
+	// . "github.com/solo-io/gloo-connect/e2e"
 	"github.com/hashicorp/consul/api"
 
 	"github.com/envoyproxy/go-control-plane/envoy/api/v2"
@@ -39,7 +39,7 @@ var _ = Describe("ConsulConnect", func() {
 
 	BeforeSuite(func() {
 		var err error
-		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-consul-bridge/cmd")
+		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-connect/cmd")
 		Expect(err).ShouldNot(HaveOccurred())
 	})
 

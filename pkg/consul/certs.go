@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/solo-io/gloo-consul-bridge/pkg/types"
+	"github.com/solo-io/gloo-connect/pkg/types"
 )
 
 type ConfigWriter interface {
