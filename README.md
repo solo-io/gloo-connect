@@ -37,7 +37,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 <BR>
 
 ## Documentation
-* [Gloo Connect Documentation](https://glooconnect.solo.io)
+* [Gloo Connect Documentation](https://connect.solo.io)
 
 
 Blogs & Demos
