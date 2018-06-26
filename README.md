@@ -3,7 +3,7 @@
 <h1 align="center">
     <img src="docs/GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
-  The Consul-Native Service Mesh
+  The Consul-Native Service Fabric
 </h1>
 
 ### What is Gloo Connect?
