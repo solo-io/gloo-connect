@@ -7,7 +7,7 @@
 <h1 align="center">
     <img src="GlooConnect.png" alt="GlooConnect" width="428" height="242">
   <br>
-  The Envoy Filter for Consul Connect
+  The Consul-Native Service Fabric
 </h1>
 
 ### What is Gloo Connect?
