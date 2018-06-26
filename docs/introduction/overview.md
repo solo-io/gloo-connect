@@ -1,5 +1,12 @@
+# Overview
 
-<h1 align="center">
-    <img src="docs/introduction/overview.png" alt="GlooConnectOverview" width="160" height="100">
-    <img src="GlooConnect.png" alt="GlooConnectOverview" width="160" height="100">
-</h1>
+![Overview](../figures/overview.png)
+
+### Consul Connect: Layer 3/4
+* **Security**: AuthN, AuthZ, intents, policy, mTLS
+* **Networking**: TCP routing 
+### Gloo Connecton: Layer 7
+* **Security**: RBAC
+* **Observability**: Analytics, Monitoring, Debugging, Logging
+* **Traffic control**: Rate limit, Transformation, Compression, Caching
+* **Networking**: HTTP routing, serverless
