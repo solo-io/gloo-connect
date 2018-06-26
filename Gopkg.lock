@@ -208,8 +208,8 @@
 [[projects]]
   name = "github.com/hashicorp/consul"
   packages = ["api"]
-  revision = "5174058f0d2bda63fa5198ab96c33d9a909c58ed"
-  version = "v1.1.0"
+  revision = "28141971f966e99916da2c5e461dd968746491cd"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -311,6 +311,12 @@
   name = "github.com/mitchellh/hashstructure"
   packages = ["."]
   revision = "2bca23e0e452137f789efbc8610126fd8b94f73b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/mapstructure"
+  packages = ["."]
+  revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
 
 [[projects]]
   name = "github.com/modern-go/concurrent"
@@ -421,7 +427,7 @@
     "pkg/storage/dependencies",
     "pkg/storage/file"
   ]
-  revision = "db0ffe8ab5e287fa89f8c276416e94cdc5314044"
+  revision = "1ed23f9987de90edf0cb42ce95c56f36fe350e08"
 
 [[projects]]
   name = "github.com/spf13/cobra"
@@ -744,6 +750,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "81067cf2cdaa05fe6e3a0cb354330f8c7ac23ca14adb5d93155e84c57ef1b87e"
+  inputs-digest = "e85bfb03b2aca551f726777eca5ad09be4f4fb93298316c6bd4d51ef8bd92efb"
   solver-name = "gps-cdcl"
   solver-version = 1
