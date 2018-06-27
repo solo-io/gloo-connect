@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"time"
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
@@ -43,12 +45,25 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 	if err != nil {
 		return err
 	}
+
+	port := uint32(8500)
+	addr := "127.0.0.1"
+
+	consulCfg := api.DefaultConfig()
+	addresparts := strings.Split(consulCfg.Address, ":")
+
+	if len(addresparts) == 2 {
+		addr = addresparts[0]
+		port32, _ := strconv.Atoi(addresparts[1])
+		port = uint32(port32)
+	}
+
 	// TODO(ilackarms): do not hard-code
 	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
-		ConsulHostname: "localhost",
-		ConsulPort:     8500,
+		ConsulHostname: addr,
+		ConsulPort:     port,
 		AuthorizePath:  "/v1/agent/connect/authorize",
-		ConfigDir: runconfig.ConfigDir,
+		ConfigDir:      runconfig.ConfigDir,
 	})
 
 	ctx := context.Background()
