@@ -14,20 +14,21 @@ import (
 	"github.com/solo-io/gloo-connect/pkg/consul"
 	"github.com/solo-io/gloo-connect/pkg/gloo/connect"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
+	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
 )
 
 type ProxyConfig struct {
-	BindAddress         string     `json:"bind_address"`
-	BindPort            uint       `json:"bind_port"`
-	LocalServiceAddress string     `json:"local_service_address"`
-	Upstreams           []Upstream `json:"upstreams"`
+	BindAddress         string     `json:"bind_address" mapstructure:"bind_address"`
+	BindPort            uint       `json:"bind_port" mapstructure:"bind_port"`
+	LocalServiceAddress string     `json:"local_service_address" mapstructure:"local_service_address"`
+	Upstreams           []Upstream `json:"upstreams" mapstructure:"upstreams"`
 }
 
 type Upstream struct {
-	DestinationName string `json:"destination_name"`
-	DestinationType string `json:"destination_type"`
-	LocalBindPort   uint32 `json:"local_bind_port"`
+	DestinationName string `json:"destination_name" mapstructure:"destination_name"`
+	DestinationType string `json:"destination_type" mapstructure:"destination_type"`
+	LocalBindPort   uint32 `json:"local_bind_port" mapstructure:"local_bind_port"`
 }
 
 type ConfigWriter struct {
@@ -65,32 +66,55 @@ func NewConfigWriter(gloo storage.Interface, cfg consul.ConsulConnectConfig, con
 }
 
 func (cw *ConfigWriter) syncRole(cfg *api.ConnectProxyConfig) error {
+	log.Printf("syncing role %s", cw.roleName)
+	defer log.Printf("syncing role - done")
+
 	role, err := cw.gloo.V1().Roles().Get(cw.roleName)
 	if err != nil {
 		role, err = cw.gloo.V1().Roles().Create(&v1.Role{
 			Name: cw.roleName,
 		})
 		if err != nil {
+			log.Warnf("error creating role: %v", err)
 			return err
 		}
 	}
+	log.Printf("retrieved existing role %v", role)
+
 	// clone the role, use this to determine if a storage write is necessary
-	updatedRole := cw.updateRole(proto.Clone(role).(*v1.Role), cfg)
+	updatedRole, err := cw.updateRole(proto.Clone(role).(*v1.Role), cfg)
+	if err != nil {
+		log.Warnf("error updating role: %v", err)
+		return err
+	}
 	if role.Equal(updatedRole) {
+		log.Printf("role is up to date; nothing to update")
 		return nil
 	}
 	if _, err := cw.gloo.V1().Roles().Update(updatedRole); err != nil {
-		return errors.Wrapf(err, "updating role %v", role.Name)
+		err = errors.Wrapf(err, "updating role %v", role.Name)
+		log.Warnf("error updating role: %v", err)
+		return err
 	}
 	return nil
 }
 
-func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) *v1.Role {
+func GetProxyConfig(pcfg *api.ConnectProxyConfig) (*ProxyConfig, error) {
 
 	cfg := new(ProxyConfig)
 
-	mapstructure.Decode(pcfg.Config, cfg)
+	err := mapstructure.Decode(pcfg.Config, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}
 
+func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) (*v1.Role, error) {
+	cfg, err := GetProxyConfig(pcfg)
+	if err != nil {
+		return nil, err
+	}
 	upstreams := cfg.Upstreams
 	requiredListeners := 1 + len(upstreams)
 	if len(role.Listeners) < requiredListeners {
@@ -106,7 +130,7 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) 
 	for i, upstream := range cfg.Upstreams {
 		syncOutboundListener(role.Listeners[i+1], upstream)
 	}
-	return role
+	return role, nil
 }
 
 func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cfg *ProxyConfig, consul ConsulInfo) {
