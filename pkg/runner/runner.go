@@ -15,6 +15,7 @@ import (
 	"github.com/solo-io/gloo-connect/pkg/consul"
 	"github.com/solo-io/gloo-connect/pkg/envoy"
 	"github.com/solo-io/gloo-connect/pkg/gloo"
+	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
 )
 
@@ -58,6 +59,8 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		port = uint32(port32)
 	}
 
+	log.Printf("creating config writer")
+
 	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
 		ConsulHostname: addr,
 		ConsulPort:     port,
@@ -69,11 +72,13 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 	ctx, cancelTerm := cancelOnTerm(ctx)
 	defer cancelTerm()
 
+	log.Printf("creating cert fetcher")
 	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("getting first copy of local certs")
 	// we need one root cert and client cert to begin:
 	rootcert := <-cf.RootCerts()
 	leaftcert := <-cf.Certs()
@@ -88,10 +93,14 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		LeafCert: leaftcert,
 		RootCas:  rootcert,
 	}
+
+	log.Printf("writing envoy config")
 	err = e.WriteConfig(envoyCfg)
 	if err != nil {
 		return errors.New("can't write config")
 	}
+
+	log.Printf("starting envoy config")
 	err = e.Reload()
 	if err != nil {
 		return errors.New("can't start envoy config")
