@@ -8,12 +8,27 @@ import (
 
 	"path/filepath"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/hashicorp/consul/api"
 	"github.com/solo-io/gloo-connect/pkg/consul"
 	"github.com/solo-io/gloo-connect/pkg/gloo/connect"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/storage"
 )
+
+type ProxyConfig struct {
+	BindAddress         string     `json:"bind_address"`
+	BindPort            uint       `json:"bind_port"`
+	LocalServiceAddress string     `json:"local_service_address"`
+	Upstreams           []Upstream `json:"upstreams"`
+}
+
+type Upstream struct {
+	DestinationName string `json:"destination_name"`
+	DestinationType string `json:"destination_type"`
+	LocalBindPort   uint32 `json:"local_bind_port"`
+}
 
 type ConfigWriter struct {
 	roleName   string
@@ -36,7 +51,7 @@ func secretPaths(configDir string) (string, string, string) {
 	return filepath.Join(configDir, "leaf.crt"), filepath.Join(configDir, "leaf.key"), filepath.Join(configDir, "rootcas.crt")
 }
 
-func (cw *ConfigWriter) Write(cfg *api.ProxyInfo) error {
+func (cw *ConfigWriter) Write(cfg *api.ConnectProxyConfig) error {
 	return cw.syncRole(cfg)
 }
 
@@ -49,7 +64,7 @@ func NewConfigWriter(gloo storage.Interface, cfg consul.ConsulConnectConfig, con
 	}
 }
 
-func (cw *ConfigWriter) syncRole(cfg *api.ProxyInfo) error {
+func (cw *ConfigWriter) syncRole(cfg *api.ConnectProxyConfig) error {
 	role, err := cw.gloo.V1().Roles().Get(cw.roleName)
 	if err != nil {
 		role, err = cw.gloo.V1().Roles().Create(&v1.Role{
@@ -70,29 +85,34 @@ func (cw *ConfigWriter) syncRole(cfg *api.ProxyInfo) error {
 	return nil
 }
 
-func (cw *ConfigWriter) updateRole(role *v1.Role, cfg *api.ProxyInfo) *v1.Role {
-	upstreams := cfg.Config.Upstreams
+func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) *v1.Role {
+
+	cfg := new(ProxyConfig)
+
+	mapstructure.Decode(pcfg.Config, cfg)
+
+	upstreams := cfg.Upstreams
 	requiredListeners := 1 + len(upstreams)
 	if len(role.Listeners) < requiredListeners {
 		for i := len(role.Listeners); i <= requiredListeners; i++ {
 			role.Listeners = append(role.Listeners, &v1.Listener{})
 		}
 	}
-	syncInboundListener(role.Listeners[0], cfg, cw.consulInfo)
+	syncInboundListener(role.Listeners[0], pcfg, cfg, cw.consulInfo)
 	// sort upstreams for idempotency
 	sort.SliceStable(upstreams, func(i, j int) bool {
 		return upstreams[i].LocalBindPort < upstreams[j].LocalBindPort
 	})
-	for i, upstream := range cfg.Config.Upstreams {
+	for i, upstream := range cfg.Upstreams {
 		syncOutboundListener(role.Listeners[i+1], upstream)
 	}
 	return role
 }
 
-func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consul ConsulInfo) {
-	listener.Name = cfg.ProxyServiceID + "-inbound"
-	listener.BindAddress = cfg.Config.BindAddress
-	listener.BindPort = uint32(cfg.Config.BindPort)
+func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cfg *ProxyConfig, consul ConsulInfo) {
+	listener.Name = pcfg.ProxyServiceID + "-inbound"
+	listener.BindAddress = cfg.BindAddress
+	listener.BindPort = uint32(cfg.BindPort)
 	listenerConfig, err := connect.DecodeListenerConfig(listener.Config)
 	if err != nil || listenerConfig == nil {
 		listenerConfig = &connect.ListenerConfig{}
@@ -108,13 +128,13 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consul Consu
 	if inbound == nil {
 		inbound = &connect.InboundListenerConfig{}
 	}
-	inbound.LocalServiceName = cfg.TargetServiceName
-	inbound.LocalServiceAddress = cfg.Config.LocalServiceAddress
+	inbound.LocalServiceName = pcfg.TargetServiceName
+	inbound.LocalServiceAddress = cfg.LocalServiceAddress
 	authConfig := inbound.AuthConfig
 	if authConfig == nil {
 		authConfig = &connect.AuthConfig{}
 	}
-	authConfig.Target = cfg.TargetServiceName
+	authConfig.Target = pcfg.TargetServiceName
 	authConfig.AuthorizeHostname = consul.ConsulHostname
 	authConfig.AuthorizePort = consul.ConsulPort
 	authConfig.AuthorizePath = consul.AuthorizePath
@@ -135,7 +155,7 @@ func syncInboundListener(listener *v1.Listener, cfg *api.ProxyInfo, consul Consu
 	}
 }
 
-func syncOutboundListener(listener *v1.Listener, upstream api.Upstream) {
+func syncOutboundListener(listener *v1.Listener, upstream Upstream) {
 	listener.Name = upstream.DestinationName + "-outbound"
 	// TODO (ilackarms): support ipv6
 	listener.BindAddress = "127.0.0.1"

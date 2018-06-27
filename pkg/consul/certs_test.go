@@ -14,7 +14,7 @@ import (
 type fakeConfigWriter struct {
 }
 
-func (f *fakeConfigWriter) Write(cfg *api.ProxyInfo) error {
+func (f *fakeConfigWriter) Write(cfg *api.ConnectProxyConfig) error {
 	return nil
 }
 
@@ -30,9 +30,9 @@ func (f *fakeConsulConnectConfig) Token() string {
 }
 
 type mockConnectClient struct {
-	rootschan   chan *api.RootsInfo
-	leafchan    chan *api.LeafCertInfo
-	pconfigchan chan *api.ProxyInfo
+	rootschan   chan *api.CARootList
+	leafchan    chan *api.LeafCert
+	pconfigchan chan *api.ConnectProxyConfig
 }
 
 func generateQm() *api.QueryMeta {
@@ -41,15 +41,15 @@ func generateQm() *api.QueryMeta {
 	}
 }
 
-func (c *mockConnectClient) RootCerts(q *api.QueryOptions) (*api.RootsInfo, *api.QueryMeta, error) {
+func (c *mockConnectClient) ConnectCARoots(q *api.QueryOptions) (*api.CARootList, *api.QueryMeta, error) {
 	return <-c.rootschan, generateQm(), nil
 }
 
-func (c *mockConnectClient) LeafCert(svcname string, q *api.QueryOptions) (*api.LeafCertInfo, *api.QueryMeta, error) {
+func (c *mockConnectClient) ConnectCALeaf(svcname string, q *api.QueryOptions) (*api.LeafCert, *api.QueryMeta, error) {
 	return <-c.leafchan, generateQm(), nil
 }
 
-func (c *mockConnectClient) ProxyConfig(proxyid string, q *api.QueryOptions) (*api.ProxyInfo, *api.QueryMeta, error) {
+func (c *mockConnectClient) ConnectProxyConfig(proxyid string, q *api.QueryOptions) (*api.ConnectProxyConfig, *api.QueryMeta, error) {
 	return <-c.pconfigchan, generateQm(), nil
 }
 
@@ -62,27 +62,27 @@ var _ = Describe("Certs", func() {
 	)
 
 	var (
-		singleRootsInfo *api.RootsInfo
+		singleRootsInfo *api.CARootList
 	)
 
 	BeforeEach(func() {
 		ctx, cancel = context.WithCancel(context.Background())
 		mockClient = &mockConnectClient{
-			rootschan:   make(chan *api.RootsInfo, 10),
-			leafchan:    make(chan *api.LeafCertInfo, 10),
-			pconfigchan: make(chan *api.ProxyInfo, 10),
+			rootschan:   make(chan *api.CARootList, 10),
+			leafchan:    make(chan *api.LeafCert, 10),
+			pconfigchan: make(chan *api.ConnectProxyConfig, 10),
 		}
 
 		cf, err := NewCertificateFetcherFromInterface(ctx, &fakeConfigWriter{}, &fakeConsulConnectConfig{}, mockClient)
 		Expect(err).NotTo(HaveOccurred())
 		certificateFetcher = cf
 
-		singleRootsInfo = &api.RootsInfo{
+		singleRootsInfo = &api.CARootList{
 			ActiveRootID: "123",
-			Roots: []api.RootCA{{
-				ID:       "123",
-				RootCert: "123",
-				Active:   true,
+			Roots: []*api.CARoot{{
+				ID:          "123",
+				RootCertPEM: "123",
+				Active:      true,
 			}},
 		}
 
@@ -95,7 +95,7 @@ var _ = Describe("Certs", func() {
 	Context("root certs", func() {
 
 		It("should not get root cert when none arrives", func() {
-			mockClient.rootschan <- &api.RootsInfo{ActiveRootID: "none"}
+			mockClient.rootschan <- &api.CARootList{ActiveRootID: "none"}
 			Consistently(certificateFetcher.RootCerts()).ShouldNot(Receive())
 		})
 
@@ -114,12 +114,12 @@ var _ = Describe("Certs", func() {
 		It("should get only get new certs", func() {
 			mockClient.rootschan <- singleRootsInfo
 			mockClient.rootschan <- singleRootsInfo
-			secondInfo := &api.RootsInfo{
+			secondInfo := &api.CARootList{
 				ActiveRootID: "567",
-				Roots: []api.RootCA{{
-					ID:       "567",
-					RootCert: "567",
-					Active:   true,
+				Roots: []*api.CARoot{{
+					ID:          "567",
+					RootCertPEM: "567",
+					Active:      true,
 				}},
 			}
 			mockClient.rootschan <- secondInfo

@@ -10,13 +10,13 @@ import (
 )
 
 type ConfigWriter interface {
-	Write(cfg *api.ProxyInfo) error
+	Write(cfg *api.ConnectProxyConfig) error
 }
 
 type ConnectClient interface {
-	RootCerts(q *api.QueryOptions) (*api.RootsInfo, *api.QueryMeta, error)
-	LeafCert(svcname string, q *api.QueryOptions) (*api.LeafCertInfo, *api.QueryMeta, error)
-	ProxyConfig(proxyid string, q *api.QueryOptions) (*api.ProxyInfo, *api.QueryMeta, error)
+	ConnectCARoots(q *api.QueryOptions) (*api.CARootList, *api.QueryMeta, error)
+	ConnectCALeaf(svcname string, q *api.QueryOptions) (*api.LeafCert, *api.QueryMeta, error)
+	ConnectProxyConfig(proxyid string, q *api.QueryOptions) (*api.ConnectProxyConfig, *api.QueryMeta, error)
 }
 
 type CertificateFetcher interface {
@@ -49,7 +49,7 @@ func NewCertificateFetcher(ctx context.Context, configWriter ConfigWriter, cfg C
 	if err != nil {
 		return nil, err
 	}
-	return NewCertificateFetcherFromInterface(ctx, configWriter, cfg, api.NewAgentConnect(client))
+	return NewCertificateFetcherFromInterface(ctx, configWriter, cfg, client.Agent())
 }
 
 func NewCertificateFetcherFromInterface(ctx context.Context, configWriter ConfigWriter, cfg ConsulConnectConfig, client ConnectClient) (CertificateFetcher, error) {
@@ -75,7 +75,7 @@ func (c *certificateFetcher) getRoots(ctx context.Context) {
 
 	for {
 		q = q.WithContext(ctx)
-		info, query, err := c.c.RootCerts(q)
+		info, query, err := c.c.ConnectCARoots(q)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
@@ -90,7 +90,7 @@ func (c *certificateFetcher) getRoots(ctx context.Context) {
 		var newCerts types.Certificates
 		for _, r := range info.Roots {
 			if r.Active {
-				newCerts = append(newCerts, types.Certificate(r.RootCert))
+				newCerts = append(newCerts, types.Certificate(r.RootCertPEM))
 			}
 		}
 		if len(newCerts) != 0 {
@@ -107,7 +107,7 @@ func (c *certificateFetcher) getProxyConfig(ctx context.Context, proxyid string)
 	var leafStarted bool
 	for {
 		q = q.WithContext(ctx)
-		proxyinfo, query, err := c.c.ProxyConfig(proxyid, q)
+		proxyinfo, query, err := c.c.ConnectProxyConfig(proxyid, q)
 
 		if err != nil {
 			if ctx.Err() != nil {
@@ -136,7 +136,7 @@ func (c *certificateFetcher) getLeaf(ctx context.Context, service string) {
 	var q *api.QueryOptions
 	for {
 		q = q.WithContext(ctx)
-		info, query, err := c.c.LeafCert(service, q)
+		info, query, err := c.c.ConnectCALeaf(service, q)
 		if err != nil {
 			if ctx.Err() != nil {
 				return
