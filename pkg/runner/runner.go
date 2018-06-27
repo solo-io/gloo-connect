@@ -58,7 +58,6 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		port = uint32(port32)
 	}
 
-	// TODO(ilackarms): do not hard-code
 	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
 		ConsulHostname: addr,
 		ConsulPort:     port,
