@@ -12,7 +12,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 
 <BR>
 <p align="center">
-    <img src="docs/figures/overview.png" alt="GlooConnect_overview" width="800" height="500">
+    <img src="docs/figures/overview.png" alt="GlooConnect_overview" width="800" height="478">
 </p>
 
 <BR>
