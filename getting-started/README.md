@@ -2,18 +2,30 @@
 
 # Configuration
 
-You will need:
-- A consul binary
-- A envoy binary with gloo plugins
-- A gloo consul bridge binary
-- A localgloo binary
-- A service that you want to connect to
+Binaries that we will use:
 
-Start localgloo
+- A consul binary in our path
+- A envoy binary with gloo plugins
+- A localgloo binary
+- A gloo consul bridge binary
+
+Additionally, you will need a service to connec to. we have packaged an example go service 
+in service.go file.
+
+# Prepare environment
+
+Commands should be run in a terminal, and cd to the folder containing this file. 
+Before running each command we will source `prepare-env.sh` to create folders and environment variables.
+
+## Start gloo
+
+ Start localgloo:
 
 ```bash
-export GLOO_CONFIG_HOME=${PWD}/gloo
-mkdir $GLOO_CONFIG_HOME
+#  Create folders and environment variables
+. prepare-env.sh
+
+#  Start localgloo
 localgloo \
   --storage.type file \
   --secrets.type file \
@@ -23,16 +35,13 @@ localgloo \
   --file.secret.dir ${GLOO_CONFIG_HOME}/_gloo_config/secrets
 ```
 
-Register the consul bridge:
+## Configure consul
 
-```
-export CONSUL_CONFIG_HOME=${PWD}/consul-config
-mkdir $CONSUL_CONFIG_HOME
-export GLOO_CONSUL_BRIDGE=${PWD}/gloo-consul-bridge-config
-mkdir $GLOO_CONSUL_BRIDGE
+In another terminal, register the consul bridge:
 
-GLOO_BRIDGE_PATH=gloo-consul-bridge
-ENVOY_PATH=/home/yuval/bin/envoy
+```bash
+#  Create folders and environment variables
+. prepare-env.sh
 
 cat > $CONSUL_CONFIG_HOME/connect.json <<EOF
 {
@@ -40,7 +49,7 @@ cat > $CONSUL_CONFIG_HOME/connect.json <<EOF
     "enabled" : true,
     "proxy_defaults" : {
         "exec_mode" : "daemon",
-        "daemon_command" : ["${GLOO_BRIDGE_PATH}", "--gloo-address", "localhost", "--gloo-port", "8081", "--conf-dir","${GLOO_CONSUL_BRIDGE}", "--envoy-path","${ENVOY_PATH}",
+        "daemon_command" : ["${GLOO_BRIDGE_PATH}", "--gloo-address", "localhost", "--gloo-port", "8081", "--conf-dir","${GLOO_CONSUL_BRIDGE_HOME}", "--envoy-path","${ENVOY_PATH}",
         "--storage.type","file",
         "--secrets.type","file",
         "--files.type","file",
@@ -54,13 +63,16 @@ cat > $CONSUL_CONFIG_HOME/connect.json <<EOF
 EOF
 ```
 
+## Start and register a microservice
+
 Start your test service:
+
 
 ```
 go run service.go&
-```
+``` 
 
-create a consul configuration for it:
+...and reigster it with consul:
 ```
 cat > $CONSUL_CONFIG_HOME/service.json <<EOF
 {
@@ -81,11 +93,18 @@ Start consul:
 consul agent -dev --config-dir=$CONSUL_CONFIG_HOME
 ```
 
-Connect and test!
+# What's happening
+At this point, consul will start the the gloo bridge as a managed proxy, that in turn will start and configure gloo and envoy to be part of the mesh.
 
+## Test!
+
+Use consul to create a proxy (as specified in the debugging section in the consul docs),
+and use curl to test!:
 ```
 consul connect proxy \
   -service operator-test \
-  -upstream web-proxy:8181
+  -upstream web:8181
 curl http://localhost:8181
 ```
+
+
