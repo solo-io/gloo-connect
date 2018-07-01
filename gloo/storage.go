@@ -150,7 +150,7 @@ func (s *ConfigMerger) watchConnectConfigs() <-chan *api.ConnectProxyConfig {
 }
 
 func (s *ConfigMerger) role(connectConfig *api.ConnectProxyConfig) (*v1.Role, error) {
-	proxyConfig, err := getProxyConfig(connectConfig)
+	proxyConfig, err := parseProxyConfig(connectConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -209,11 +209,11 @@ func outboundListener(upstream Upstream) *v1.Listener {
 	}
 }
 
-func getProxyConfig(connectConfig *api.ConnectProxyConfig) (*ProxyConfig, error) {
+func parseProxyConfig(connectConfig *api.ConnectProxyConfig) (*ProxyConfig, error) {
 	proxyConfig := new(ProxyConfig)
 	err := mapstructure.Decode(connectConfig.Config, proxyConfig)
 	if err != nil {
-		return nil, errors.Wrapf(err, "decoding mapstructure for proxy config")
+		return nil, errors.Wrapf(err, "decoding map[string]interface{} as proxy config")
 	}
 	return proxyConfig, nil
 }
