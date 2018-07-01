@@ -17,6 +17,7 @@ import (
 	"github.com/solo-io/gloo-connect/pkg/gloo"
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
+	"github.com/solo-io/gloo/pkg/storage/dependencies"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -31,14 +32,14 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func Run(runconfig RunConfig, store storage.Interface) error {
-	if runconfig.ConfigDir == "" {
+func Run(runConfig RunConfig, store storage.Interface, secrets dependencies.SecretStorage) error {
+	if runConfig.ConfigDir == "" {
 		var err error
-		runconfig.ConfigDir, err = ioutil.TempDir("", "")
+		runConfig.ConfigDir, err = ioutil.TempDir("", "")
 		if err != nil {
 			return err
 		}
-		defer os.RemoveAll(runconfig.ConfigDir)
+		defer os.RemoveAll(runConfig.ConfigDir)
 	}
 
 	// get what we need from consul
@@ -59,13 +60,15 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		port = uint32(port32)
 	}
 
+	store =
+
 	log.Printf("creating config writer")
 
 	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
 		ConsulHostname: addr,
 		ConsulPort:     port,
 		AuthorizePath:  "/v1/agent/connect/authorize",
-		ConfigDir:      runconfig.ConfigDir,
+		ConfigDir:      runConfig.ConfigDir,
 	})
 
 	ctx := context.Background()
@@ -88,7 +91,7 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		Cluster: cfg.ProxyId(),
 	}
 
-	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
+	e := envoy.NewEnvoy(runConfig.EnvoyPath, runConfig.GlooAddress, runConfig.GlooPort, runConfig.ConfigDir, id)
 	envoyCfg := envoy.Config{
 		LeafCert: leaftcert,
 		RootCas:  rootcert,
