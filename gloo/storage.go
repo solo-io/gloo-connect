@@ -3,10 +3,14 @@ package gloo
 import (
 	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
-	"github.com/vektah/gqlgen/neelance/errors"
 	"github.com/hashicorp/consul/api"
 	"sort"
 	"github.com/solo-io/gloo-connect/pkg/gloo/connect"
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
+	"time"
+	"github.com/solo-io/gloo/pkg/log"
+	"github.com/solo-io/gloo-connect/pkg/consul"
 )
 
 type ProxyConfig struct {
@@ -34,11 +38,22 @@ type ConsulInfo struct {
 }
 
 type ConfigMerger struct {
-	gloo   storage.Interface
-	consul *api.Client
+	proxyId    string
+	gloo       storage.Interface
+	consul     consul.ConnectClient
+	consulInfo ConsulInfo
 }
 
 var _ storage.Interface = &ConfigMerger{}
+
+func NewConfigMerger(proxyId string, gloo storage.Interface, consul consul.ConnectClient, info ConsulInfo) *ConfigMerger {
+	return &ConfigMerger{
+		proxyId:    proxyId,
+		gloo:       gloo,
+		consul:     consul,
+		consulInfo: info,
+	}
+}
 
 func (s *ConfigMerger) V1() storage.V1 {
 	return s
@@ -73,52 +88,100 @@ func (s *ConfigMerger) Delete(name string) error {
 }
 
 func (s *ConfigMerger) Get(name string) (*v1.Role, error) {
-
+	return nil, errors.Errorf("Roles.Get is disabled for ConfigMerger")
 }
 
-func (s *ConfigMerger) List() ([]*v1.Role, error) {}
-
-func (s *ConfigMerger) Watch(...storage.RoleEventHandler) (*storage.Watcher, error) {}
-
-func convertProxyConfig(cfg *api.ConnectProxyConfig) *v1.Role {
-
+func (s *ConfigMerger) List() ([]*v1.Role, error) {
+	return nil, errors.Errorf("Roles.Delte is disabled for ConfigMerger")
 }
 
-func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) (*v1.Role, error) {
-	cfg, err := GetProxyConfig(pcfg)
+func (s *ConfigMerger) Watch(handlers ...storage.RoleEventHandler) (*storage.Watcher, error) {
+	configs := s.watchConnectConfigs()
+
+	var isUpdate bool
+
+	return storage.NewWatcher(func(stop <-chan struct{}, errs chan error) {
+		for {
+			select {
+			case connectConfig := <-configs:
+				role, err := s.role(connectConfig)
+				if err != nil {
+					log.Warnf("error syncing with consul connect config: %v", err)
+					continue
+				}
+				for _, h := range handlers {
+					if !isUpdate {
+						h.OnAdd([]*v1.Role{role}, role)
+					} else {
+						h.OnUpdate([]*v1.Role{role}, role)
+					}
+				}
+				isUpdate = true
+			case err := <-errs:
+				log.Warnf("failed to start watcher to: %v", err)
+				return
+			case <-stop:
+				return
+			}
+		}
+	}), nil
+}
+
+func (s *ConfigMerger) watchConnectConfigs() <-chan *api.ConnectProxyConfig {
+	configs := make(chan *api.ConnectProxyConfig)
+
+	go func() {
+		var opts *api.QueryOptions
+		for {
+			connectConfig, query, err := s.consul.ConnectProxyConfig(s.proxyId, opts)
+			if err != nil {
+				log.Printf("errror watching connect config: %v", err)
+				time.Sleep(time.Second)
+				continue
+			}
+			opts = &api.QueryOptions{
+				WaitIndex: query.LastIndex,
+			}
+			configs <- connectConfig
+		}
+	}()
+
+	return configs
+}
+
+func (s *ConfigMerger) role(connectConfig *api.ConnectProxyConfig) (*v1.Role, error) {
+	proxyConfig, err := getProxyConfig(connectConfig)
 	if err != nil {
 		return nil, err
 	}
-	upstreams := cfg.Upstreams
-	requiredListeners := 1 + len(upstreams)
-	if len(role.Listeners) < requiredListeners {
-		for i := len(role.Listeners); i <= requiredListeners; i++ {
-			role.Listeners = append(role.Listeners, &v1.Listener{})
-		}
+	listeners := []*v1.Listener{inboundListener(connectConfig, proxyConfig, s.consulInfo)}
+	for _, upstream := range proxyConfig.Upstreams {
+		listeners = append(listeners, outboundListener(upstream))
 	}
-	syncInboundListener(role.Listeners[0], pcfg, cfg, cw.consulInfo)
-	// sort upstreams for idempotency
-	sort.SliceStable(upstreams, func(i, j int) bool {
-		return upstreams[i].LocalBindPort < upstreams[j].LocalBindPort
+
+	// sort listeners for idempotency
+	sort.SliceStable(listeners, func(i, j int) bool {
+		return listeners[i].BindPort < listeners[j].BindPort
 	})
-	for i, upstream := range cfg.Upstreams {
-		syncOutboundListener(role.Listeners[i+1], upstream)
-	}
-	return role, nil
+
+	return &v1.Role{
+		Name:      s.proxyId,
+		Listeners: listeners,
+	}, nil
 }
 
-func inboundListener(pcfg *api.ConnectProxyConfig, cfg *ProxyConfig, consul ConsulInfo) *v1.Listener {
+func inboundListener(connectConfig *api.ConnectProxyConfig, proxyConfig *ProxyConfig, consul ConsulInfo) *v1.Listener {
 	return &v1.Listener{
-		Name:        pcfg.ProxyServiceID + "-inbound",
-		BindAddress: cfg.BindAddress,
-		BindPort:    uint32(cfg.BindPort),
+		Name:        connectConfig.ProxyServiceID + "-inbound",
+		BindAddress: proxyConfig.BindAddress,
+		BindPort:    uint32(proxyConfig.BindPort),
 		Config: connect.EncodeListenerConfig(&connect.ListenerConfig{
 			Config: &connect.ListenerConfig_Inbound{
 				Inbound: &connect.InboundListenerConfig{
-					LocalServiceName:    pcfg.TargetServiceName,
-					LocalServiceAddress: cfg.LocalServiceAddress,
+					LocalServiceName:    connectConfig.TargetServiceName,
+					LocalServiceAddress: proxyConfig.LocalServiceAddress,
 					AuthConfig: &connect.AuthConfig{
-						Target:            pcfg.TargetServiceName,
+						Target:            connectConfig.TargetServiceName,
 						AuthorizeHostname: consul.ConsulHostname,
 						AuthorizePort:     consul.ConsulPort,
 						AuthorizePath:     consul.AuthorizePath,
@@ -126,47 +189,31 @@ func inboundListener(pcfg *api.ConnectProxyConfig, cfg *ProxyConfig, consul Cons
 				},
 			},
 		}),
-	}
-	// TODO (ilackarms): RequestTimeout:
-	inbound.AuthConfig = authConfig
-	inboundConfig.Inbound = inbound
-	listenerConfig.Config = inboundConfig
-	connect.SetListenerConfig(listener, listenerConfig)
-	caCert, privateKey, rootCa := secretPaths(consul.ConfigDir)
-	listener.SslConfig = &v1.SSLConfig{
-		SslSecrets: &v1.SSLConfig_SslFiles{
-			SslFiles: &v1.SSLFiles{
-				TlsCert: caCert,
-				TlsKey:  privateKey,
-				RootCa:  rootCa,
-			},
-		},
+		SslConfig: nil, //TODO
 	}
 }
 
-func syncOutboundListener(listener *v1.Listener, upstream Upstream) {
-	listener.Name = upstream.DestinationName + "-outbound"
-	// TODO (ilackarms): support ipv6
-	listener.BindAddress = "127.0.0.1"
-	listener.BindPort = upstream.LocalBindPort
-	listenerConfig, err := connect.DecodeListenerConfig(listener.Config)
-	if err != nil || listenerConfig == nil {
-		listenerConfig = &connect.ListenerConfig{}
+func outboundListener(upstream Upstream) *v1.Listener {
+	return &v1.Listener{
+		Name:        upstream.DestinationName + "-outbound",
+		BindAddress: "127.0.0.1",
+		BindPort:    upstream.LocalBindPort,
+		Config: connect.EncodeListenerConfig(&connect.ListenerConfig{
+			Config: &connect.ListenerConfig_Outbound{
+				Outbound: &connect.OutboundListenerConfig{
+					DestinationConsulService: upstream.DestinationName,
+					DestinationConsulType:    upstream.DestinationType,
+				},
+			},
+		}),
 	}
-	if listenerConfig.Config == nil {
-		listenerConfig.Config = &connect.ListenerConfig_Outbound{}
+}
+
+func getProxyConfig(connectConfig *api.ConnectProxyConfig) (*ProxyConfig, error) {
+	proxyConfig := new(ProxyConfig)
+	err := mapstructure.Decode(connectConfig.Config, proxyConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "decoding mapstructure for proxy config")
 	}
-	outboundConfig, ok := listenerConfig.Config.(*connect.ListenerConfig_Outbound)
-	if !ok {
-		outboundConfig = &connect.ListenerConfig_Outbound{}
-	}
-	outbound := outboundConfig.Outbound
-	if outbound == nil {
-		outbound = &connect.OutboundListenerConfig{}
-	}
-	outbound.DestinationConsulService = upstream.DestinationName
-	outbound.DestinationConsulType = upstream.DestinationType
-	outboundConfig.Outbound = outbound
-	listenerConfig.Config = outboundConfig
-	connect.SetListenerConfig(listener, listenerConfig)
+	return proxyConfig, nil
 }
