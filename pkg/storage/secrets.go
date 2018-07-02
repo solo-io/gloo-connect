@@ -19,7 +19,7 @@ type InMemorySecrets struct {
 	updates chan struct{}
 }
 
-func newInMemorySecrets() *InMemorySecrets {
+func NewInMemorySecrets() *InMemorySecrets {
 	return &InMemorySecrets{
 		objects: make(map[string]*dependencies.Secret),
 		updates: make(chan struct{}, 10),
