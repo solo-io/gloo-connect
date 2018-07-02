@@ -44,14 +44,10 @@
   revision = "f2b4162afba35581b6d4a50d3b8f34e33c144682"
   name = "github.com/json-iterator/go"
 
-[[constraint]]
-  name = "github.com/hashicorp/consul"
-  version = "1.2.0"
-
 [prune]
   go-tests = true
   unused-packages = true
 
 [[override]]
   name = "github.com/solo-io/gloo"
-  revision = "db0ffe8ab5e287fa89f8c276416e94cdc5314044"
+  revision = "739895065b285f5a12c0921c5bd7171f0a581fb0"
