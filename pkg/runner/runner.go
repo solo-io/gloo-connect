@@ -18,6 +18,8 @@ import (
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo/pkg/storage/dependencies"
+	"github.com/solo-io/gloo-connect/pkg/gloo/control-plane/eventloop"
+	"github.com/solo-io/gloo/pkg/bootstrap"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -32,7 +34,7 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func Run(runConfig RunConfig, store storage.Interface, secrets dependencies.SecretStorage) error {
+func Run(runConfig RunConfig, opts *bootstrap.Options, store storage.Interface, secrets dependencies.SecretStorage) error {
 	if runConfig.ConfigDir == "" {
 		var err error
 		runConfig.ConfigDir, err = ioutil.TempDir("", "")
@@ -59,17 +61,24 @@ func Run(runConfig RunConfig, store storage.Interface, secrets dependencies.Secr
 		port32, _ := strconv.Atoi(addresparts[1])
 		port = uint32(port32)
 	}
+	consulConfig := api.DefaultConfig()
+	consulConfig.Token = cfg.Token()
+	consulClient, err := api.NewClient(consulConfig)
+	if err != nil {
+		return err
+	}
 
-	store =
-
-	log.Printf("creating config writer")
-
-	rolename, configWriter := gloo.NewConfigWriter(store, cfg, gloo.ConsulInfo{
+	store = gloo.NewConfigMerger(cfg.ProxyId(), store, consulClient.Agent(), gloo.ConsulInfo{
 		ConsulHostname: addr,
 		ConsulPort:     port,
 		AuthorizePath:  "/v1/agent/connect/authorize",
 		ConfigDir:      runConfig.ConfigDir,
 	})
+
+	controlPlane, err := eventloop.Setup(store, secrets, opts, int(runConfig.GlooPort))
+	if err != nil {
+		return err
+	}
 
 	ctx := context.Background()
 	ctx, cancelTerm := cancelOnTerm(ctx)

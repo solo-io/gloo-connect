@@ -9,6 +9,7 @@ import (
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
 	"github.com/solo-io/gloo/pkg/bootstrap/flags"
 	"github.com/spf13/cobra"
+	"github.com/solo-io/gloo/pkg/bootstrap/secretstorage"
 )
 
 func main() {
@@ -36,7 +37,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	if err := runner.Run(rc, store); err != nil {
+	secrets, err := secretstorage.Bootstrap(*opts)
+	if err != nil {
+		return err
+	}
+	if err := runner.Run(*opts, rc, store, secrets); err != nil {
 		return err
 	}
 	return nil
