@@ -1,5 +1,5 @@
 export ENVOY_PATH=$(which envoy)
-GLOO_BRIDGE_PATH=$(which gloo-consul-bridge)
+GLOO_BRIDGE_PATH=$(which gloo-connect)
 
 export GLOO_CONFIG_HOME=${PWD}/gloo
 mkdir -p $GLOO_CONFIG_HOME
@@ -7,7 +7,7 @@ mkdir -p $GLOO_CONFIG_HOME
 export CONSUL_CONFIG_HOME=${PWD}/consul-config
 mkdir -p $CONSUL_CONFIG_HOME
 
-export GLOO_CONSUL_BRIDGE_HOME=${PWD}/gloo-consul-bridge-config
+export GLOO_CONSUL_BRIDGE_HOME=${PWD}/gloo-connect-config
 mkdir -p $GLOO_CONSUL_BRIDGE_HOME
 
 

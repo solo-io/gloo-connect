@@ -18,6 +18,12 @@ import (
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
 	localstorage "github.com/solo-io/gloo-connect/pkg/storage"
+	"github.com/solo-io/gloo/pkg/bootstrap/artifactstorage"
+	pkgerrs "github.com/pkg/errors"
+	"github.com/solo-io/gloo/pkg/control-plane/eventloop"
+	"github.com/solo-io/gloo/pkg/upstream-discovery"
+	"github.com/solo-io/gloo/pkg/upstream-discovery/bootstrap"
+	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -32,14 +38,14 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 	return ctx, cancel
 }
 
-func Run(runconfig RunConfig, store storage.Interface) error {
-	if runconfig.ConfigDir == "" {
+func Run(runConfig RunConfig, store storage.Interface) error {
+	if runConfig.ConfigDir == "" {
 		var err error
-		runconfig.ConfigDir, err = ioutil.TempDir("", "")
+		runConfig.ConfigDir, err = ioutil.TempDir("", "")
 		if err != nil {
 			return err
 		}
-		defer os.RemoveAll(runconfig.ConfigDir)
+		defer os.RemoveAll(runConfig.ConfigDir)
 	}
 
 	// wrap the config store with our in-memory one
@@ -47,6 +53,19 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 
 	// create a secret client for in-memory certificates
 	secrets := localstorage.NewInMemorySecrets()
+
+	files, err := artifactstorage.Bootstrap(runConfig.Options)
+	if err != nil {
+		return pkgerrs.Wrap(err, "creating file storage client")
+	}
+
+	opts := controlplane.Options{
+		Options: runConfig.Options,
+	}
+	controlPlane, err := eventloop.SetupWithStorage(opts, store, secrets, files, int(runConfig.GlooPort))
+	if err != nil {
+		return pkgerrs.Wrap(err, "creating control-plane event loop")
+	}
 
 	// get what we need from consul
 	cfg, err := consul.NewConsulConnectConfigFromEnv()
@@ -72,12 +91,31 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		ConsulHostname: addr,
 		ConsulPort:     port,
 		AuthorizePath:  "/v1/agent/connect/authorize",
-		ConfigDir:      runconfig.ConfigDir,
+		ConfigDir:      runConfig.ConfigDir,
 	})
 
 	ctx := context.Background()
 	ctx, cancelTerm := cancelOnTerm(ctx)
 	defer cancelTerm()
+
+	//create stop channel from context
+	stop := make(chan struct{})
+	go func(){
+		<-ctx.Done()
+		close(stop)
+	}()
+	go controlPlane.Run(stop)
+	go func() {
+		opts := bootstrap.Options{
+			Options: runConfig.Options,
+			UpstreamDiscoveryOptions: bootstrap.UpstreamDiscoveryOptions{
+				EnableDiscoveryForConsul: true,
+			},
+		}
+		if err := upstreamdiscovery.Start(opts, store, stop); err != nil {
+			log.Fatalf("failed to start upstream discovery: %v", err)
+		}
+	}()
 
 	log.Printf("creating cert fetcher")
 	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
@@ -95,7 +133,7 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		Cluster: cfg.ProxyId(),
 	}
 
-	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id, secrets)
+	e := envoy.NewEnvoy(runConfig.EnvoyPath, runConfig.GlooAddress, runConfig.GlooPort, runConfig.ConfigDir, id, secrets)
 	envoyCfg := envoy.Config{
 		LeafCert: leaftcert,
 		RootCas:  rootcert,

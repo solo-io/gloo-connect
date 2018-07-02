@@ -24,8 +24,8 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "gloo-consul-bridge",
-	Short: "runs the gloo-consul bridge to connect gloo to consul's connect api",
+	Use:   "gloo-connect",
+	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return run()
 	},
@@ -43,19 +43,18 @@ func run() error {
 }
 
 func init() {
-	// choose storage options (type, etc) for configs, secrets, and artifacts
-	flags.AddConfigStorageOptionFlags(rootCmd, opts)
-	flags.AddSecretStorageOptionFlags(rootCmd, opts)
-	flags.AddFileStorageOptionFlags(rootCmd, opts)
-
-	// storage backends
-	flags.AddFileFlags(rootCmd, opts)
-	flags.AddKubernetesFlags(rootCmd, opts)
+	// for storage and service discovery
 	flags.AddConsulFlags(rootCmd, opts)
-	flags.AddVaultFlags(rootCmd, opts)
 
-	rootCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "", "address for gloo ADS server")
-	rootCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 0, "port for gloo ADS server")
+	// defaults
+	rc.GlooAddress = "127.0.0.1"
+	rc.GlooPort = 8081
+	opts.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+	opts.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+
+	// secrets isn't used anyway - only do in-memory for now
+	opts.SecretStorageOptions.Type = bootstrap.WatcherTypeFile
+
 	rootCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	rootCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 }
