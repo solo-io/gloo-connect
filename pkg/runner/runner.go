@@ -17,6 +17,7 @@ import (
 	"github.com/solo-io/gloo-connect/pkg/gloo"
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
+	localstorage "github.com/solo-io/gloo-connect/pkg/storage"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -40,6 +41,12 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		}
 		defer os.RemoveAll(runconfig.ConfigDir)
 	}
+
+	// wrap the config store with our in-memory one
+	store = localstorage.NewPartialInMemoryConfig(store)
+
+	// create a secret client for in-memory certificates
+	secrets := localstorage.NewInMemorySecrets()
 
 	// get what we need from consul
 	cfg, err := consul.NewConsulConnectConfigFromEnv()
@@ -88,7 +95,7 @@ func Run(runconfig RunConfig, store storage.Interface) error {
 		Cluster: cfg.ProxyId(),
 	}
 
-	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id)
+	e := envoy.NewEnvoy(runconfig.EnvoyPath, runconfig.GlooAddress, runconfig.GlooPort, runconfig.ConfigDir, id, secrets)
 	envoyCfg := envoy.Config{
 		LeafCert: leaftcert,
 		RootCas:  rootcert,

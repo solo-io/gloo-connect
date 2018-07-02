@@ -19,6 +19,10 @@ import (
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/solo-io/gloo-connect/pkg/types"
 	"github.com/solo-io/gloo/pkg/log"
+	"github.com/solo-io/gloo/pkg/storage/dependencies"
+	"github.com/solo-io/gloo/pkg/api/defaults/v1"
+	"github.com/solo-io/gloo/pkg/storage"
+	pkgerrs "github.com/pkg/errors"
 )
 
 type Config struct {
@@ -51,9 +55,12 @@ type envoy struct {
 
 	configChanged chan struct{}
 	doneInstances chan *EnvoyInstance
+
+	// certificates will be stored here
+	secrets dependencies.SecretStorage
 }
 
-func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir string, id *envoycore.Node) Envoy {
+func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir string, id *envoycore.Node, secrets dependencies.SecretStorage) Envoy {
 	if envoyBin == "" {
 		envoyBin, _ = exec.LookPath("envoy")
 	}
@@ -66,6 +73,7 @@ func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir stri
 
 		configChanged: make(chan struct{}, 10),
 		doneInstances: make(chan *EnvoyInstance),
+		secrets:       secrets,
 	}
 }
 
@@ -103,17 +111,21 @@ func (e *envoy) remove(ei *EnvoyInstance) {
 }
 
 func (e *envoy) WriteConfig(cfg Config) error {
-	err := ioutil.WriteFile(filepath.Join(e.configDir, "rootcas.crt"), []byte(cfg.RootCas.String()), 0600)
-	if err != nil {
-		return err
+	certificates := &dependencies.Secret{
+		Ref: "certificates",
+		Data: map[string]string{
+			v1.SslCertificateChainKey: string(cfg.LeafCert.Certificate),
+			v1.SslPrivateKeyKey:       string(cfg.LeafCert.PrivateKey),
+			v1.SslRootCaKey:           cfg.RootCas.String(),
+		},
 	}
-	err = ioutil.WriteFile(filepath.Join(e.configDir, "leaf.crt"), []byte(cfg.LeafCert.Certificate), 0600)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(e.configDir, "leaf.key"), []byte(cfg.LeafCert.PrivateKey), 0600)
-	if err != nil {
-		return err
+	if _, err := e.secrets.Create(certificates); err != nil {
+		if !storage.IsAlreadyExists(err) {
+			return pkgerrs.Wrapf(err, "failed to create secret for certificates")
+		}
+		if _, err := e.secrets.Update(certificates); err != nil {
+			return pkgerrs.Wrapf(err, "failed to update secret for certificates")
+		}
 	}
 
 	// TODO: write the envoy config file it self?
@@ -121,7 +133,7 @@ func (e *envoy) WriteConfig(cfg Config) error {
 	jsonpbMarshaler := &jsonpb.Marshaler{OrigName: true}
 
 	var buf bytes.Buffer
-	err = jsonpbMarshaler.Marshal(&buf, &bootconfig)
+	err := jsonpbMarshaler.Marshal(&buf, &bootconfig)
 	if err != nil {
 		return err
 	}
