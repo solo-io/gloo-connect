@@ -12,10 +12,10 @@ import (
 
 	"github.com/hashicorp/consul/api"
 	"github.com/solo-io/gloo-connect/pkg/consul"
-	"github.com/solo-io/gloo-connect/pkg/gloo/connect"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
+	"github.com/solo-io/gloo/pkg/plugins/connect"
 )
 
 type ProxyConfig struct {
