@@ -30,7 +30,7 @@
 
 [[override]]
   name = "k8s.io/api"
-  version = "kubernetes-1.9.0"
+  revision = "b7d77fa220f5130ec63c2ca7167dd9653449c64d"
 
 [[override]]
   name = "k8s.io/apimachinery"
@@ -51,3 +51,12 @@
 [[override]]
   name = "github.com/solo-io/gloo"
   revision = "739895065b285f5a12c0921c5bd7171f0a581fb0"
+
+# thanks dep
+[[override]]
+  name = "code.cloudfoundry.org/copilot"
+  revision = "26e157ee8cde31d7444976022ba0469e69ca1cd3"
+
+[[override]]
+  name = "github.com/envoyproxy/go-control-plane"
+  revision = "9daae37c4f163381177a2156a718f00b1770f35d"

@@ -8,13 +8,12 @@
   version = "v0.24.0"
 
 [[projects]]
-  branch = "master"
   name = "code.cloudfoundry.org/copilot"
   packages = [
     ".",
     "api"
   ]
-  revision = "96e6d46d5a323013702c429c77413c98b8c37517"
+  revision = "26e157ee8cde31d7444976022ba0469e69ca1cd3"
 
 [[projects]]
   name = "github.com/Azure/go-autorest"
@@ -72,7 +71,6 @@
   version = "v2.7.1"
 
 [[projects]]
-  branch = "master"
   name = "github.com/envoyproxy/go-control-plane"
   packages = [
     "envoy/api/v2",
@@ -96,7 +94,7 @@
     "pkg/server",
     "pkg/util"
   ]
-  revision = "8da69c22276922e7f517b8b04d474f799f5cae1c"
+  revision = "9daae37c4f163381177a2156a718f00b1770f35d"
 
 [[projects]]
   name = "github.com/fatih/structs"
@@ -772,8 +770,7 @@
     "storage/v1alpha1",
     "storage/v1beta1"
   ]
-  revision = "af4bc157c3a209798fc897f6d4aaaaeb6c2e0d6a"
-  version = "kubernetes-1.9.0"
+  revision = "b7d77fa220f5130ec63c2ca7167dd9653449c64d"
 
 [[projects]]
   branch = "master"
@@ -976,6 +973,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cd24cc91f101ded801bd59f2531f65193756310adb01b41f5171eeeb24fd0bfe"
+  inputs-digest = "02b7910a4218f2221fc0ea30eafee41434952c4578029e7402e2e6adf4c599d3"
   solver-name = "gps-cdcl"
   solver-version = 1
