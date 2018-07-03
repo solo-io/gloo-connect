@@ -27,8 +27,6 @@ var rootCmd = &cobra.Command{
 	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// defaults
-		rc.GlooAddress = "127.0.0.1"
-		rc.GlooPort = 8081
 		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
 		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
 
@@ -57,6 +55,8 @@ func init() {
 	// TODO(ilackarms): support a flag for in-memory storage
 	flags.AddFileFlags(rootCmd, &rc.Options)
 
+	rootCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
+	rootCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
 	rootCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	rootCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 }

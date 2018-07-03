@@ -94,7 +94,6 @@ func (cw *ConfigWriter) syncRole(cfg *api.ConnectProxyConfig) error {
 }
 
 func GetProxyConfig(pcfg *api.ConnectProxyConfig) (*ProxyConfig, error) {
-
 	cfg := new(ProxyConfig)
 
 	err := mapstructure.Decode(pcfg.Config, cfg)
