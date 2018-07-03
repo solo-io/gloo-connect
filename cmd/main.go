@@ -19,7 +19,6 @@ func main() {
 }
 
 var (
-	opts = &bootstrap.Options{}
 	rc   runner.RunConfig
 )
 
@@ -27,12 +26,21 @@ var rootCmd = &cobra.Command{
 	Use:   "gloo-connect",
 	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// defaults
+		rc.GlooAddress = "127.0.0.1"
+		rc.GlooPort = 8081
+		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+
+		// secrets isn't used anyway - only do in-memory for now
+		// TODO(ilackarms): support a flag for in-memory storage
+		rc.Options.SecretStorageOptions.Type = bootstrap.WatcherTypeFile
 		return run()
 	},
 }
 
 func run() error {
-	store, err := configstorage.Bootstrap(*opts)
+	store, err := configstorage.Bootstrap(rc.Options)
 	if err != nil {
 		return err
 	}
@@ -44,16 +52,10 @@ func run() error {
 
 func init() {
 	// for storage and service discovery
-	flags.AddConsulFlags(rootCmd, opts)
-
-	// defaults
-	rc.GlooAddress = "127.0.0.1"
-	rc.GlooPort = 8081
-	opts.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
-	opts.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-
-	// secrets isn't used anyway - only do in-memory for now
-	opts.SecretStorageOptions.Type = bootstrap.WatcherTypeFile
+	flags.AddConsulFlags(rootCmd, &rc.Options)
+	// not used, kombina to prevent secret storage from complaining
+	// TODO(ilackarms): support a flag for in-memory storage
+	flags.AddFileFlags(rootCmd, &rc.Options)
 
 	rootCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	rootCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
