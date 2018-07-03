@@ -2,3 +2,6 @@ vendor
 site/
 getting-started/connect.json
 getting-started/consul-config/
+gloo-connect
+getting-started/web-proxy-stderr.log
+getting-started/web-proxy-stdout.log
