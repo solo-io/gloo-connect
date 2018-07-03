@@ -6,10 +6,9 @@ Binaries that we will use:
 
 - A consul binary in our path
 - A envoy binary with gloo plugins
-- A localgloo binary
 - A gloo consul bridge binary
 
-Additionally, you will need a service to connec to. we have packaged an example go service 
+Additionally, you will need a service to connect to. we have packaged an example go service 
 in service.go file.
 
 # Prepare environment
@@ -17,27 +16,9 @@ in service.go file.
 Commands should be run in a terminal, and cd to the folder containing this file. 
 Before running each command we will source `prepare-env.sh` to create folders and environment variables.
 
-## Start gloo
-
- Start localgloo:
-
-```bash
-#  Create folders and environment variables
-. prepare-env.sh
-
-#  Start localgloo
-localgloo \
-  --storage.type file \
-  --secrets.type file \
-  --files.type file \
-  --file.config.dir ${GLOO_CONFIG_HOME}/_gloo_config \
-  --file.files.dir ${GLOO_CONFIG_HOME}/_gloo_config/files \
-  --file.secret.dir ${GLOO_CONFIG_HOME}/_gloo_config/secrets
-```
-
 ## Configure consul
 
-In another terminal, register the consul bridge:
+Register the consul bridge:
 
 ```bash
 #  Create folders and environment variables
