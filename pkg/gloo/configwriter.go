@@ -110,6 +110,8 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) 
 		return nil, err
 	}
 	upstreams := cfg.Upstreams
+	// one extra for the inbound listener
+	// TODO(ilackarms): support client-only services (no listener)
 	requiredListeners := 1 + len(upstreams)
 	if len(role.Listeners) < requiredListeners {
 		for i := len(role.Listeners); i <= requiredListeners; i++ {
