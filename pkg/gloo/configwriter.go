@@ -6,8 +6,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
-	"path/filepath"
-
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/hashicorp/consul/api"
@@ -46,10 +44,6 @@ type ConsulInfo struct {
 	AuthorizePath string
 	// dir where gloo bridge config is stored
 	ConfigDir string
-}
-
-func secretPaths(configDir string) (string, string, string) {
-	return filepath.Join(configDir, "leaf.crt"), filepath.Join(configDir, "leaf.key"), filepath.Join(configDir, "rootcas.crt")
 }
 
 func (cw *ConfigWriter) Write(cfg *api.ConnectProxyConfig) error {
@@ -167,14 +161,9 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 	inboundConfig.Inbound = inbound
 	listenerConfig.Config = inboundConfig
 	connect.SetListenerConfig(listener, listenerConfig)
-	caCert, privateKey, rootCa := secretPaths(consul.ConfigDir)
 	listener.SslConfig = &v1.SSLConfig{
-		SslSecrets: &v1.SSLConfig_SslFiles{
-			SslFiles: &v1.SSLFiles{
-				TlsCert: caCert,
-				TlsKey:  privateKey,
-				RootCa:  rootCa,
-			},
+		SslSecrets: &v1.SSLConfig_SecretRef{
+			SecretRef: "certificates",
 		},
 	}
 }
