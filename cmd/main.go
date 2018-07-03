@@ -29,10 +29,6 @@ var rootCmd = &cobra.Command{
 		// defaults
 		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
 		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-
-		// secrets isn't used anyway - only do in-memory for now
-		// TODO(ilackarms): support a flag for in-memory storage
-		rc.Options.SecretStorageOptions.Type = bootstrap.WatcherTypeFile
 		return run()
 	},
 }
