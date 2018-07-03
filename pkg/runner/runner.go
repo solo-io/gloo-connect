@@ -25,6 +25,7 @@ import (
 	"github.com/solo-io/gloo/pkg/upstream-discovery/bootstrap"
 	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
 	"math"
+	"net"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -79,11 +80,23 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 		Options: runConfig.Options,
 		// TODO(ilackarms): change embedded gloo to not require ingress options
 		IngressOptions: controlplane.IngressOptions{
-			Port: math.MaxUint32,
-			SecurePort: math.MaxUint32-1,
+			Port:       math.MaxUint32,
+			SecurePort: math.MaxUint32 - 1,
 		},
 	}
-	controlPlane, err := eventloop.SetupWithStorage(opts, store, secrets, files, int(runConfig.GlooPort))
+
+	xdsBindAddr := &net.TCPAddr{
+		Port: int(runConfig.GlooPort),
+	}
+	glooConfig := eventloop.Config{
+		Options:        opts,
+		Store:          store,
+		Secrets:        secrets,
+		Files:          files,
+		XdsBindAddress: xdsBindAddr,
+	}
+
+	controlPlane, err := eventloop.SetupWithConfig(glooConfig)
 	if err != nil {
 		return pkgerrs.Wrap(err, "creating control-plane event loop")
 	}
@@ -114,7 +127,7 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 
 	//create stop channel from context
 	stop := make(chan struct{})
-	go func(){
+	go func() {
 		<-ctx.Done()
 		close(stop)
 	}()
