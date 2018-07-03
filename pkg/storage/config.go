@@ -45,6 +45,10 @@ func (s *PartialInMemoryConfig) Roles() storage.Roles {
 	return s.roles
 }
 
+func (s *PartialInMemoryConfig) Attributes() storage.Attributes {
+	return s.gloo.V1().Attributes()
+}
+
 /**************************************
 	Upstreams
  *************************************/

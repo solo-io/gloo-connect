@@ -548,7 +548,7 @@
     "pkg/upstream-discovery/copilot",
     "pkg/upstream-discovery/kube"
   ]
-  revision = "f60107ea0bf059b27a1f98eb12d42819f1432e6c"
+  revision = "9d1da18b10b587922154e808740eec6aa71c8d2d"
 
 [[projects]]
   branch = "master"
@@ -973,6 +973,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8816687cead0ccf861d7ca79af3c2dce95db429961a2ec985bcc869e6b101016"
+  inputs-digest = "74d420921ce343e1a6f4bb2a9a9564beba6233fe6540177d3abe39a5004374a2"
   solver-name = "gps-cdcl"
   solver-version = 1
