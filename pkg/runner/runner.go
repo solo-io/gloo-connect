@@ -24,6 +24,7 @@ import (
 	"github.com/solo-io/gloo/pkg/upstream-discovery"
 	"github.com/solo-io/gloo/pkg/upstream-discovery/bootstrap"
 	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
+	"math"
 )
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -48,6 +49,21 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 		defer os.RemoveAll(runConfig.ConfigDir)
 	}
 
+	// set consul options from consul config
+	consulCfg := api.DefaultConfig()
+	cfg, err := consul.NewConsulConnectConfigFromEnv()
+	if err != nil {
+		return err
+	}
+	runConfig.Options.ConsulOptions.Token = cfg.Token()
+	runConfig.Options.ConsulOptions.Address = consulCfg.Address
+	runConfig.Options.ConsulOptions.Datacenter = consulCfg.Datacenter
+	runConfig.Options.ConsulOptions.Scheme = consulCfg.Scheme
+	if consulCfg.HttpAuth != nil {
+		runConfig.Options.ConsulOptions.Username = consulCfg.HttpAuth.Username
+		runConfig.Options.ConsulOptions.Password = consulCfg.HttpAuth.Password
+	}
+
 	// wrap the config store with our in-memory one
 	store = localstorage.NewPartialInMemoryConfig(store)
 
@@ -61,22 +77,20 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 
 	opts := controlplane.Options{
 		Options: runConfig.Options,
+		// TODO(ilackarms): change embedded gloo to not require ingress options
+		IngressOptions: controlplane.IngressOptions{
+			Port: math.MaxUint32,
+			SecurePort: math.MaxUint32-1,
+		},
 	}
 	controlPlane, err := eventloop.SetupWithStorage(opts, store, secrets, files, int(runConfig.GlooPort))
 	if err != nil {
 		return pkgerrs.Wrap(err, "creating control-plane event loop")
 	}
 
-	// get what we need from consul
-	cfg, err := consul.NewConsulConnectConfigFromEnv()
-	if err != nil {
-		return err
-	}
-
 	port := uint32(8500)
 	addr := "127.0.0.1"
 
-	consulCfg := api.DefaultConfig()
 	addresparts := strings.Split(consulCfg.Address, ":")
 
 	if len(addresparts) == 2 {
