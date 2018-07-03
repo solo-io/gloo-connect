@@ -19,21 +19,21 @@ func main() {
 }
 
 var (
-	rc   runner.RunConfig
+	opts bootstrap.Options
+	rc runner.RunConfig
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "gloo-connect",
-	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// defaults
-		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
-		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-		return run()
-	},
+	Short: "root command for running and managing gloo-connect",
 }
 
 func run() error {
+	// always use consul for storage and service discovery
+	rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+	rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+	rc.Options = opts
+
 	store, err := configstorage.Bootstrap(rc.Options)
 	if err != nil {
 		return err
@@ -46,13 +46,32 @@ func run() error {
 
 func init() {
 	// for storage and service discovery
-	flags.AddConsulFlags(rootCmd, &rc.Options)
-	// not used, kombina to prevent secret storage from complaining
-	// TODO(ilackarms): support a flag for in-memory storage
-	flags.AddFileFlags(rootCmd, &rc.Options)
+	flags.AddConsulFlags(rootCmd, &opts)
 
-	rootCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
-	rootCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
-	rootCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
-	rootCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
+	bridgeCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
+	bridgeCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
+	bridgeCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
+	bridgeCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
+
+	rootCmd.AddCommand(bridgeCmd, httpCmd)
+}
+
+var bridgeCmd = &cobra.Command{
+	Use:   "bridge",
+	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return run()
+	},
+}
+
+var httpCmd = &cobra.Command{
+	Use:   "http",
+	Short: "manage HTTP features for in-mesh services",
+	Long:  "",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// defaults
+		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+		return run()
+	},
 }
