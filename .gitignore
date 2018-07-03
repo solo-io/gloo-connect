@@ -6,3 +6,4 @@ gloo-connect
 getting-started/web-proxy-stderr.log
 getting-started/web-proxy-stdout.log
 getting-started/gloo-connect-config/
+getting-started/pids/
