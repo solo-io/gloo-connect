@@ -100,7 +100,7 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) 
 		return upstreams[i].LocalBindPort < upstreams[j].LocalBindPort
 	})
 	for i, upstream := range cfg.Upstreams {
-		syncOutboundListener(role.Listeners[i+1], upstream)
+		syncOutboundListener(role.Listeners[i+1], pcfg.TargetServiceName, upstream)
 	}
 	return role, nil
 }
@@ -109,6 +109,10 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 	listener.Name = pcfg.ProxyServiceID + "-inbound"
 	listener.BindAddress = cfg.BindAddress
 	listener.BindPort = uint32(cfg.BindPort)
+	listener.Labels = map[string]string{
+		"service": pcfg.TargetServiceName,
+		"inbound": "true",
+	}
 	listenerConfig, err := connect.DecodeListenerConfig(listener.Config)
 	if err != nil || listenerConfig == nil {
 		listenerConfig = &connect.ListenerConfig{}
@@ -146,11 +150,15 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 	}
 }
 
-func syncOutboundListener(listener *v1.Listener, upstream consul.Upstream) {
+func syncOutboundListener(listener *v1.Listener, targetServiceName string, upstream consul.Upstream) {
 	listener.Name = upstream.DestinationName + "-outbound"
 	// TODO (ilackarms): support ipv6
 	listener.BindAddress = "127.0.0.1"
 	listener.BindPort = upstream.LocalBindPort
+	listener.Labels = map[string]string{
+		"service":     targetServiceName,
+		"destination": upstream.DestinationName,
+	}
 	listenerConfig, err := connect.DecodeListenerConfig(listener.Config)
 	if err != nil || listenerConfig == nil {
 		listenerConfig = &connect.ListenerConfig{}
