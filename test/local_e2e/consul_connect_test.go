@@ -73,6 +73,8 @@ var _ = Describe("ConsulConnect", func() {
 	var consulSession *gexec.Session
 	xdsPort := 7071
 
+	var waitForInit time.Duration = 5 * time.Second
+
 	BeforeSuite(func() {
 		var err error
 		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-connect/cmd")
@@ -94,9 +96,10 @@ var _ = Describe("ConsulConnect", func() {
 	})
 
 	writeService := func(uds bool) {
-
+		// generate the template
 		args := []string{
 			pathToGlooBridge,
+			"bridge",
 			"--gloo-port",
 			fmt.Sprintf("%v", xdsPort),
 			"--conf-dir",
@@ -114,6 +117,7 @@ var _ = Describe("ConsulConnect", func() {
 				dlvargs := []string{dlv, "exec", "--headless", "--listen", "localhost:2345", "--"}
 				args = append(dlvargs, args...)
 			}
+			waitForInit = time.Hour
 		}
 
 		svc := ConsulService{
@@ -145,15 +149,7 @@ var _ = Describe("ConsulConnect", func() {
 	}
 
 	BeforeEach(func() {
-		glooBridge := filepath.Join(os.Getenv("GOPATH"), "src", "github.com/solo-io/gloo-connect/cmd")
-		_, err := os.Stat(glooBridge)
-		if os.IsNotExist(err) {
-			Skip("no glooBridge available skipping test")
-		}
-
-		// generate the template
-
-		tmpdir, err = ioutil.TempDir("", "")
+		tmpdir, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
 
 		bridgeConfigDir = filepath.Join(tmpdir, "glooBridge-config")
@@ -202,7 +198,7 @@ var _ = Describe("ConsulConnect", func() {
 
 		//runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(waitForInit)
 
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
 		Expect(err).NotTo(HaveOccurred())
@@ -230,7 +226,7 @@ var _ = Describe("ConsulConnect", func() {
 
 		//runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(waitForInit)
 
 		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
 		Expect(err).NotTo(HaveOccurred())
