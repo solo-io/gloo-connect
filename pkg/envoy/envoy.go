@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -17,17 +19,10 @@ import (
 	envoybootstrap "github.com/envoyproxy/go-control-plane/envoy/config/bootstrap/v2"
 
 	"github.com/gogo/protobuf/jsonpb"
-	"github.com/solo-io/gloo-connect/pkg/types"
 	"github.com/solo-io/gloo/pkg/log"
-	"github.com/solo-io/gloo/pkg/storage/dependencies"
-	"github.com/solo-io/gloo/pkg/api/defaults/v1"
-	"github.com/solo-io/gloo/pkg/storage"
-	pkgerrs "github.com/pkg/errors"
 )
 
 type Config struct {
-	LeafCert types.CertificateAndKey
-	RootCas  types.Certificates
 }
 
 type Envoy interface {
@@ -45,7 +40,7 @@ type EnvoyInstance struct {
 
 type envoy struct {
 	restartEpoch uint
-	glooAddress  string
+	glooAddress  net.Addr
 	glooPort     uint
 	configDir    string
 	id           *envoycore.Node
@@ -55,25 +50,20 @@ type envoy struct {
 
 	configChanged chan struct{}
 	doneInstances chan *EnvoyInstance
-
-	// certificates will be stored here
-	secrets dependencies.SecretStorage
 }
 
-func NewEnvoy(envoyBin string, glooAddress string, glooPort uint, configDir string, id *envoycore.Node, secrets dependencies.SecretStorage) Envoy {
+func NewEnvoy(envoyBin string, glooAddress net.Addr, configDir string, id *envoycore.Node) Envoy {
 	if envoyBin == "" {
 		envoyBin, _ = exec.LookPath("envoy")
 	}
 	return &envoy{
 		glooAddress: glooAddress,
-		glooPort:    glooPort,
 		configDir:   configDir,
 		id:          id,
 		envoyBin:    envoyBin,
 
 		configChanged: make(chan struct{}, 10),
 		doneInstances: make(chan *EnvoyInstance),
-		secrets:       secrets,
 	}
 }
 
@@ -111,29 +101,16 @@ func (e *envoy) remove(ei *EnvoyInstance) {
 }
 
 func (e *envoy) WriteConfig(cfg Config) error {
-	certificates := &dependencies.Secret{
-		Ref: "certificates",
-		Data: map[string]string{
-			v1.SslCertificateChainKey: string(cfg.LeafCert.Certificate),
-			v1.SslPrivateKeyKey:       string(cfg.LeafCert.PrivateKey),
-			v1.SslRootCaKey:           cfg.RootCas.String(),
-		},
-	}
-	if _, err := e.secrets.Create(certificates); err != nil {
-		if !storage.IsAlreadyExists(err) {
-			return pkgerrs.Wrapf(err, "failed to create secret for certificates")
-		}
-		if _, err := e.secrets.Update(certificates); err != nil {
-			return pkgerrs.Wrapf(err, "failed to update secret for certificates")
-		}
-	}
 
 	// TODO: write the envoy config file it self?
-	bootconfig := e.getBootstrapConfig()
+	bootconfig, err := e.getBootstrapConfig()
+	if err != nil {
+		return err
+	}
 	jsonpbMarshaler := &jsonpb.Marshaler{OrigName: true}
 
 	var buf bytes.Buffer
-	err := jsonpbMarshaler.Marshal(&buf, &bootconfig)
+	err = jsonpbMarshaler.Marshal(&buf, &bootconfig)
 	if err != nil {
 		return err
 	}
@@ -150,7 +127,7 @@ func (e *envoy) getEnvoyConfigPath() string {
 	return filepath.Join(e.configDir, "envoy.json")
 }
 
-func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
+func (e *envoy) getBootstrapConfig() (envoybootstrap.Bootstrap, error) {
 	var bootstrap envoybootstrap.Bootstrap
 
 	const glooClusterName = "xds_cluster"
@@ -180,23 +157,18 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 			}},
 		},
 	}
+	clusterType, addr, err := e.getAddress()
+	if err != nil {
+		return bootstrap, err
+	}
+
 	bootstrap.StaticResources = &envoybootstrap.Bootstrap_StaticResources{
 		Clusters: []envoyapi.Cluster{{
 			Name:                 glooClusterName,
 			ConnectTimeout:       5 * time.Second,
 			Http2ProtocolOptions: &envoycore.Http2ProtocolOptions{},
-			Type:                 envoyapi.Cluster_STRICT_DNS,
-			Hosts: []*envoycore.Address{{
-				Address: &envoycore.Address_SocketAddress{
-					SocketAddress: &envoycore.SocketAddress{
-						Protocol: envoycore.TCP,
-						Address:  e.glooAddress,
-						PortSpecifier: &envoycore.SocketAddress_PortValue{
-							PortValue: uint32(e.glooPort),
-						},
-					},
-				},
-			}},
+			Type:                 clusterType,
+			Hosts:                []*envoycore.Address{addr},
 		}},
 	}
 
@@ -215,7 +187,43 @@ func (e *envoy) getBootstrapConfig() envoybootstrap.Bootstrap {
 		},
 	}
 
-	return bootstrap
+	return bootstrap, nil
+}
+
+func (e *envoy) getAddress() (envoyapi.Cluster_DiscoveryType, *envoycore.Address, error) {
+	switch e.glooAddress.Network() {
+	case "tcp":
+		host, port, err := net.SplitHostPort(e.glooAddress.String())
+		if err != nil {
+			return envoyapi.Cluster_STATIC, nil, err
+		}
+		intport, err := strconv.Atoi(port)
+		if err != nil {
+			return envoyapi.Cluster_STATIC, nil, err
+		}
+		tcpaddr := &envoycore.Address{
+			Address: &envoycore.Address_SocketAddress{
+				SocketAddress: &envoycore.SocketAddress{
+					Protocol: envoycore.TCP,
+					Address:  host,
+					PortSpecifier: &envoycore.SocketAddress_PortValue{
+						PortValue: uint32(intport),
+					},
+				},
+			},
+		}
+		return envoyapi.Cluster_STRICT_DNS, tcpaddr, nil
+	case "unix":
+		unixaddr := &envoycore.Address{
+			Address: &envoycore.Address_Pipe{
+				Pipe: &envoycore.Pipe{
+					Path: e.glooAddress.String(),
+				},
+			},
+		}
+		return envoyapi.Cluster_STATIC, unixaddr, nil
+	}
+	return envoyapi.Cluster_STATIC, nil, errors.New("unsupported address")
 }
 
 func (e *envoy) Reload() error {
