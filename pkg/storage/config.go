@@ -1,12 +1,13 @@
 package storage
 
 import (
-	"github.com/solo-io/gloo/pkg/storage"
-	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"sort"
-	"github.com/pkg/errors"
-	"github.com/solo-io/gloo/pkg/log"
 	"sync"
+
+	"github.com/pkg/errors"
+	"github.com/solo-io/gloo/pkg/api/types/v1"
+	"github.com/solo-io/gloo/pkg/log"
+	"github.com/solo-io/gloo/pkg/storage"
 )
 
 type PartialInMemoryConfig struct {
@@ -39,6 +40,10 @@ func (s *PartialInMemoryConfig) Upstreams() storage.Upstreams {
 
 func (s *PartialInMemoryConfig) VirtualServices() storage.VirtualServices {
 	return s.gloo.V1().VirtualServices()
+}
+
+func (s *PartialInMemoryConfig) Attributes() storage.Attributes {
+	return s.gloo.V1().Attributes()
 }
 
 func (s *PartialInMemoryConfig) Roles() storage.Roles {
@@ -99,7 +104,7 @@ func (s *inMemoryUpstreams) List() ([]*v1.Upstream, error) {
 	return out, nil
 }
 
-func (s *inMemoryUpstreams) Watch(handlers ... storage.UpstreamEventHandler) (*storage.Watcher, error) {
+func (s *inMemoryUpstreams) Watch(handlers ...storage.UpstreamEventHandler) (*storage.Watcher, error) {
 	return s.store.Watch(handlers, nil)
 }
 
@@ -157,7 +162,7 @@ func (s *inMemoryRoles) List() ([]*v1.Role, error) {
 	return out, nil
 }
 
-func (s *inMemoryRoles) Watch(handlers ... storage.RoleEventHandler) (*storage.Watcher, error) {
+func (s *inMemoryRoles) Watch(handlers ...storage.RoleEventHandler) (*storage.Watcher, error) {
 	return s.store.Watch(nil, handlers)
 }
 
