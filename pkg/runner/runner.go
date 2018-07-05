@@ -216,7 +216,7 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 		Cluster: cfg.ProxyId(),
 	}
 
-	e := envoy.NewEnvoy(runConfig.EnvoyPath, glooXdsAddr, runConfig.ConfigDir, id)
+	e := envoy.NewEnvoy(runConfig.EnvoyPath, glooXdsAddr, id)
 	envoyCfg := envoy.Config{}
 
 	log.Printf("writing envoy config")
