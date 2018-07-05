@@ -19,7 +19,7 @@ func main() {
 }
 
 var (
-	rc   runner.RunConfig
+	rc runner.RunConfig
 )
 
 var rootCmd = &cobra.Command{
@@ -53,6 +53,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
 	rootCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
+	rootCmd.PersistentFlags().BoolVar(&rc.UseUDS, "gloo-uds", false, "use unix domain socket for gloo and envoy")
 	rootCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	rootCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 }

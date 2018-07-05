@@ -548,7 +548,7 @@
     "pkg/upstream-discovery/copilot",
     "pkg/upstream-discovery/kube"
   ]
-  revision = "f60107ea0bf059b27a1f98eb12d42819f1432e6c"
+  revision = "56cdeccd7807efd8c8bb3c0e79a45687c56c8a42"
 
 [[projects]]
   branch = "master"

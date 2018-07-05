@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"io/ioutil"
+	"math/rand"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -12,20 +14,44 @@ import (
 
 	envoycore "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
 	"github.com/hashicorp/consul/api"
+
 	"github.com/solo-io/gloo-connect/pkg/consul"
 	"github.com/solo-io/gloo-connect/pkg/envoy"
 	"github.com/solo-io/gloo-connect/pkg/gloo"
+	"github.com/solo-io/gloo-connect/pkg/types"
+
+	"math"
+
+	pkgerrs "github.com/pkg/errors"
+	localstorage "github.com/solo-io/gloo-connect/pkg/storage"
+	"github.com/solo-io/gloo/pkg/api/defaults/v1"
+	"github.com/solo-io/gloo/pkg/bootstrap/artifactstorage"
+	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
+	"github.com/solo-io/gloo/pkg/control-plane/eventloop"
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/storage"
-	localstorage "github.com/solo-io/gloo-connect/pkg/storage"
-	"github.com/solo-io/gloo/pkg/bootstrap/artifactstorage"
-	pkgerrs "github.com/pkg/errors"
-	"github.com/solo-io/gloo/pkg/control-plane/eventloop"
+	"github.com/solo-io/gloo/pkg/storage/dependencies"
 	"github.com/solo-io/gloo/pkg/upstream-discovery"
 	"github.com/solo-io/gloo/pkg/upstream-discovery/bootstrap"
-	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
-	"math"
 )
+
+func init() {
+	// randomize, for different results in different processes
+	rand.Seed(time.Now().UnixNano())
+}
+
+func randomStringForUDS() string {
+	letters := []rune("abcdefghijklmnopqrstuvwxyz")
+	lenletters := len(letters)
+	var sb strings.Builder
+	sb.WriteString("gloo-connect-")
+	for i := 0; i < 10; i++ {
+		idx := rand.Intn(lenletters)
+		sb.WriteRune(letters[idx])
+	}
+
+	return sb.String()
+}
 
 func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -37,6 +63,27 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 		cancel()
 	}()
 	return ctx, cancel
+}
+
+func updateCerts(secrets dependencies.SecretStorage, rootCas types.Certificates, leafCert types.CertificateAndKey) error {
+
+	certificates := &dependencies.Secret{
+		Ref: gloo.CertitificateSecretName,
+		Data: map[string]string{
+			v1.SslCertificateChainKey: string(leafCert.Certificate),
+			v1.SslPrivateKeyKey:       string(leafCert.PrivateKey),
+			v1.SslRootCaKey:           rootCas.String(),
+		},
+	}
+	if _, err := secrets.Create(certificates); err != nil {
+		if !storage.IsAlreadyExists(err) {
+			return pkgerrs.Wrapf(err, "failed to create secret for certificates")
+		}
+		if _, err := secrets.Update(certificates); err != nil {
+			return pkgerrs.Wrapf(err, "failed to update secret for certificates")
+		}
+	}
+	return nil
 }
 
 func Run(runConfig RunConfig, store storage.Interface) error {
@@ -79,11 +126,31 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 		Options: runConfig.Options,
 		// TODO(ilackarms): change embedded gloo to not require ingress options
 		IngressOptions: controlplane.IngressOptions{
-			Port: math.MaxUint32,
-			SecurePort: math.MaxUint32-1,
+			Port:       math.MaxUint32,
+			SecurePort: math.MaxUint32 - 1,
 		},
 	}
-	controlPlane, err := eventloop.SetupWithStorage(opts, store, secrets, files, int(runConfig.GlooPort))
+
+	glooXdsAddr := func() net.Addr {
+		if runConfig.UseUDS {
+			// return abstract namespace unix domain socket.
+			// note that in both go and envoy the @ will be replaced with \0. so we're good to go.
+			return &net.UnixAddr{Net: "unix", Name: "@" + randomStringForUDS()}
+		}
+		return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: int(runConfig.GlooPort)}
+	}()
+
+	log.Printf("Using address %v", glooXdsAddr)
+
+	eventloopCfg := eventloop.Config{
+		Options:        opts,
+		Store:          store,
+		Secrets:        secrets,
+		Files:          files,
+		XdsBindAddress: glooXdsAddr,
+	}
+
+	controlPlane, err := eventloop.SetupWithConfig(eventloopCfg)
 	if err != nil {
 		return pkgerrs.Wrap(err, "creating control-plane event loop")
 	}
@@ -91,11 +158,11 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 	port := uint32(8500)
 	addr := "127.0.0.1"
 
-	addresparts := strings.Split(consulCfg.Address, ":")
+	maybehost, portstr, err := net.SplitHostPort(consulCfg.Address)
 
-	if len(addresparts) == 2 {
-		addr = addresparts[0]
-		port32, _ := strconv.Atoi(addresparts[1])
+	if err == nil {
+		addr = maybehost
+		port32, _ := strconv.Atoi(portstr)
 		port = uint32(port32)
 	}
 
@@ -114,7 +181,7 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 
 	//create stop channel from context
 	stop := make(chan struct{})
-	go func(){
+	go func() {
 		<-ctx.Done()
 		close(stop)
 	}()
@@ -142,16 +209,15 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 	rootcert := <-cf.RootCerts()
 	leaftcert := <-cf.Certs()
 
+	updateCerts(secrets, rootcert, leaftcert)
+
 	id := &envoycore.Node{
 		Id:      rolename + "~" + getNodeName(),
 		Cluster: cfg.ProxyId(),
 	}
 
-	e := envoy.NewEnvoy(runConfig.EnvoyPath, runConfig.GlooAddress, runConfig.GlooPort, runConfig.ConfigDir, id, secrets)
-	envoyCfg := envoy.Config{
-		LeafCert: leaftcert,
-		RootCas:  rootcert,
-	}
+	e := envoy.NewEnvoy(runConfig.EnvoyPath, glooXdsAddr, runConfig.ConfigDir, id)
+	envoyCfg := envoy.Config{}
 
 	log.Printf("writing envoy config")
 	err = e.WriteConfig(envoyCfg)
@@ -176,17 +242,9 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 			case <-ctx.Done():
 				return
 			case rootcert = <-cf.RootCerts():
-				envoyCfg.RootCas = rootcert
 			case leaftcert = <-cf.Certs():
-				envoyCfg.LeafCert = leaftcert
 			}
-			err = e.WriteConfig(envoyCfg)
-			if err != nil {
-				// TODO: log this
-				// return errors.New("can't write config")
-				return
-			}
-			EventuallyReload(e)
+			updateCerts(secrets, rootcert, leaftcert)
 		}
 	}()
 
