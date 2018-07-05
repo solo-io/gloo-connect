@@ -5,11 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -42,7 +40,6 @@ type envoy struct {
 	restartEpoch uint
 	glooAddress  net.Addr
 	glooPort     uint
-	configDir    string
 	id           *envoycore.Node
 	envoyBin     string
 
@@ -50,15 +47,16 @@ type envoy struct {
 
 	configChanged chan struct{}
 	doneInstances chan *EnvoyInstance
+
+	cfg string
 }
 
-func NewEnvoy(envoyBin string, glooAddress net.Addr, configDir string, id *envoycore.Node) Envoy {
+func NewEnvoy(envoyBin string, glooAddress net.Addr, id *envoycore.Node) Envoy {
 	if envoyBin == "" {
 		envoyBin, _ = exec.LookPath("envoy")
 	}
 	return &envoy{
 		glooAddress: glooAddress,
-		configDir:   configDir,
 		id:          id,
 		envoyBin:    envoyBin,
 
@@ -115,16 +113,9 @@ func (e *envoy) WriteConfig(cfg Config) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(e.getEnvoyConfigPath(), buf.Bytes(), 0600)
-	if err != nil {
-		return err
-	}
+	e.cfg = buf.String()
 
 	return nil
-}
-
-func (e *envoy) getEnvoyConfigPath() string {
-	return filepath.Join(e.configDir, "envoy.json")
 }
 
 func (e *envoy) getBootstrapConfig() (envoybootstrap.Bootstrap, error) {
@@ -256,9 +247,7 @@ func (e *envoy) Exit() {
 
 func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 	// start new envoy and pass the restart epoch
-
-	// TODO add config file
-	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-path", e.getEnvoyConfigPath(), "--v2-config-only")
+	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-yaml", e.cfg, "--v2-config-only")
 	envoyCommand.Stderr = os.Stderr
 	envoyCommand.Stdout = os.Stderr
 	err := envoyCommand.Start()
