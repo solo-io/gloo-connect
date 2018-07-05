@@ -30,9 +30,9 @@ var rootCmd = &cobra.Command{
 
 func run() error {
 	// always use consul for storage and service discovery
+	rc.Options = opts
 	rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
 	rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-	rc.Options = opts
 
 	store, err := configstorage.Bootstrap(rc.Options)
 	if err != nil {
