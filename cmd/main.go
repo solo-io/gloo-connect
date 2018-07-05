@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/solo-io/gloo-connect/pkg/cmd"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap"
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
@@ -60,7 +61,7 @@ func init() {
 var bridgeCmd = &cobra.Command{
 	Use:   "bridge",
 	Short: "runs gloo-connect to bridge Envoy to Consul's connect api",
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		return run()
 	},
 }
@@ -69,10 +70,18 @@ var httpCmd = &cobra.Command{
 	Use:   "http",
 	Short: "manage HTTP features for in-mesh services",
 	Long:  "",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		// defaults
+	RunE: func(_ *cobra.Command, args []string) error {
+		rc.Options = opts
 		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
 		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-		return run()
+
+		store, err := configstorage.Bootstrap(rc.Options)
+		if err != nil {
+			return err
+		}
+
+		gc := cmd.GlooClient{Store: store}
+
+		return gc.Demo()
 	},
 }

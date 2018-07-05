@@ -1,14 +1,16 @@
 package cmd
 
 import (
-	"github.com/solo-io/gloo/pkg/api/types/v1"
-	"github.com/gogo/protobuf/types"
-	"github.com/solo-io/gloo/pkg/storage"
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/solo-io/gloo/pkg/coreplugins/route-extensions"
+
+	"github.com/gogo/protobuf/types"
+	"github.com/solo-io/gloo/pkg/api/types/v1"
+	"github.com/solo-io/gloo/pkg/storage"
+	//	"github.com/pkg/errors"
 	"time"
-	"github.com/solo-io/gloo/pkg/plugins/connect"
+
+	"github.com/solo-io/gloo/pkg/coreplugins/route-extensions"
+	//	"github.com/solo-io/gloo/pkg/plugins/connect"
 )
 
 const (
@@ -16,7 +18,7 @@ const (
 )
 
 type GlooClient struct {
-	gloo storage.Interface
+	Store storage.Interface
 }
 
 type RouteList struct {
@@ -34,9 +36,8 @@ type Route struct {
 	// Destination is implicit
 }
 
-// TODO: remove lol
-func (c *GlooClient) demo() {
-	c.EnableBasicHttp("web", "db", extensions.EncodeRouteExtensionSpec(extensions.RouteExtensionSpec{
+func (c *GlooClient) Demo() error {
+	return c.EnableBasicHttp("", "web", extensions.EncodeRouteExtensionSpec(extensions.RouteExtensionSpec{
 		MaxRetries: 10,
 		Timeout:    time.Minute,
 	}))
@@ -60,9 +61,9 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 		origin = allOrigins
 	}
 	name := virtualServiceName(origin, destination)
-	vService, err := c.gloo.V1().VirtualServices().Get(name)
+	vService, err := c.Store.V1().VirtualServices().Get(name)
 	if err != nil {
-		vService, err = c.gloo.V1().VirtualServices().Create(&v1.VirtualService{
+		vService, err = c.Store.V1().VirtualServices().Create(&v1.VirtualService{
 			Name:               name,
 			Domains:            []string{"*"},
 			DisableForGateways: true,
@@ -93,12 +94,13 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 	attribute := &v1.Attribute{
 		AttributeType: &v1.Attribute_ListenerAttribute{
 			ListenerAttribute: &v1.ListenerAttribute{
-				Selector: selector,
+				Selector:        selector,
 				VirtualServices: []string{name},
 			},
 		},
 	}
-	c.gloo.V1().Attributes().Create()
+	_, err = c.Store.V1().Attributes().Create(attribute)
+	return err
 }
 
 func virtualServiceName(origin, destination string) string {
