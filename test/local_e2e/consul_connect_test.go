@@ -1,13 +1,19 @@
 package local_e2e
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/hashicorp/consul/api"
+	"github.com/hashicorp/consul/connect"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,7 +29,12 @@ var _ = Describe("ConsulConnect", func() {
 	var pathToGlooBridge string
 	var envoypath string
 	var consulSession *gexec.Session
+
+	var testContext context.Context
+	var cancel context.CancelFunc
+
 	xdsPort := 7071
+	svcPort := 9090
 
 	var waitForInit time.Duration = 10 * time.Second
 
@@ -76,7 +87,7 @@ var _ = Describe("ConsulConnect", func() {
 		svc := ConsulService{
 			Service: Service{
 				Name: "web",
-				Port: 9090,
+				Port: svcPort,
 				Connect: Connect{
 					Proxy: Proxy{
 						ExecMode: "daemon",
@@ -102,6 +113,16 @@ var _ = Describe("ConsulConnect", func() {
 		serviceWritten = true
 	}
 
+	BeforeEach(func() {
+		testContext, cancel = context.WithCancel(context.Background())
+
+	})
+
+	AfterEach(func() {
+		cancel()
+		testContext = nil
+		cancel = nil
+	})
 	BeforeEach(func() {
 		tmpdir, err := ioutil.TempDir("", "")
 		Expect(err).NotTo(HaveOccurred())
@@ -155,4 +176,84 @@ var _ = Describe("ConsulConnect", func() {
 		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
 	})
 
+	FIt("should start envoy with gloo http", func() {
+		// pretend we are the webservice, fail the first request, and wait for the second one.
+		// start the web service before so that consul can detect as healthy
+		i := 0
+		handlerfunc := func(rw http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/test" {
+				return
+			}
+			if i == 0 {
+				rw.WriteHeader(http.StatusInternalServerError)
+			}
+			i++
+		}
+
+		handler := http.HandlerFunc(handlerfunc)
+		go func() {
+			h := &http.Server{Handler: handler, Addr: fmt.Sprintf(":%d", svcPort)}
+			go func() {
+				if err := h.ListenAndServe(); err != nil {
+					if err != http.ErrServerClosed {
+						panic(err)
+					}
+				}
+			}()
+
+			<-testContext.Done()
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			h.Shutdown(ctx)
+			cancel()
+		}()
+
+		runConsul()
+		configHttpCmd := exec.Command(pathToGlooBridge, "http")
+		configHttpCmd.Stderr = GinkgoWriter
+		configHttpCmd.Stdout = GinkgoWriter
+		err := configHttpCmd.Run()
+		Expect(err).NotTo(HaveOccurred())
+		waitForProxy()
+
+		cfg := GetProxyInfo()
+
+		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
+
+		client, err := api.NewClient(api.DefaultConfig())
+		Expect(err).NotTo(HaveOccurred())
+
+		// let everything settle. give time for envoy to start and for consul time to do health checks.
+		Eventually(
+			func() int { se, _, _ := client.Health().Connect("web", "", true, nil); return len(se) },
+			"20s",
+			"1s",
+		).ShouldNot(BeZero())
+
+		// try to connect to the service created
+		svc, err := connect.NewService("test-service", client)
+		Expect(err).NotTo(HaveOccurred())
+		defer svc.Close()
+
+		httpClient := svc.HTTPClient()
+		/* hack */
+		// TODO: remove this when possible
+		resolver := &connect.ConsulResolver{
+			Client: client,
+			Name:   "web",
+		}
+		dialTLS := func(network,
+			addr string) (net.Conn, error) {
+			return svc.Dial(context.Background(), resolver)
+		}
+		httpClient.Transport.(*http.Transport).DialTLS = dialTLS
+		/* end hack */
+
+		resp, err := httpClient.Get("https://web.service.consul/test")
+		Expect(err).NotTo(HaveOccurred())
+		Expect(resp.StatusCode).To(Equal(200))
+
+		// the service will fail the first request, and envoy should try again
+		// hence a count of 2 test requests
+		Expect(i).To(Equal(2))
+	})
 })
