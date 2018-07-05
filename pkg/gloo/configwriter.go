@@ -6,28 +6,15 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/hashicorp/consul/api"
 	"github.com/solo-io/gloo-connect/pkg/consul"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/log"
-	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo/pkg/plugins/connect"
+	"github.com/solo-io/gloo/pkg/storage"
 )
 
-type ProxyConfig struct {
-	BindAddress         string     `json:"bind_address" mapstructure:"bind_address"`
-	BindPort            uint       `json:"bind_port" mapstructure:"bind_port"`
-	LocalServiceAddress string     `json:"local_service_address" mapstructure:"local_service_address"`
-	Upstreams           []Upstream `json:"upstreams" mapstructure:"upstreams"`
-}
-
-type Upstream struct {
-	DestinationName string `json:"destination_name" mapstructure:"destination_name"`
-	DestinationType string `json:"destination_type" mapstructure:"destination_type"`
-	LocalBindPort   uint32 `json:"local_bind_port" mapstructure:"local_bind_port"`
-}
+const CertitificateSecretName = "certificates"
 
 type ConfigWriter struct {
 	roleName   string
@@ -93,18 +80,8 @@ func (cw *ConfigWriter) syncRole(cfg *api.ConnectProxyConfig) error {
 	return nil
 }
 
-func GetProxyConfig(pcfg *api.ConnectProxyConfig) (*ProxyConfig, error) {
-	cfg := new(ProxyConfig)
-
-	err := mapstructure.Decode(pcfg.Config, cfg)
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
-}
-
 func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) (*v1.Role, error) {
-	cfg, err := GetProxyConfig(pcfg)
+	cfg, err := consul.GetProxyConfig(pcfg)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +105,7 @@ func (cw *ConfigWriter) updateRole(role *v1.Role, pcfg *api.ConnectProxyConfig) 
 	return role, nil
 }
 
-func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cfg *ProxyConfig, consul ConsulInfo) {
+func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cfg *consul.ProxyConfig, consulInfo ConsulInfo) {
 	listener.Name = pcfg.ProxyServiceID + "-inbound"
 	listener.BindAddress = cfg.BindAddress
 	listener.BindPort = uint32(cfg.BindPort)
@@ -154,9 +131,9 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 		authConfig = &connect.AuthConfig{}
 	}
 	authConfig.Target = pcfg.TargetServiceName
-	authConfig.AuthorizeHostname = consul.ConsulHostname
-	authConfig.AuthorizePort = consul.ConsulPort
-	authConfig.AuthorizePath = consul.AuthorizePath
+	authConfig.AuthorizeHostname = consulInfo.ConsulHostname
+	authConfig.AuthorizePort = consulInfo.ConsulPort
+	authConfig.AuthorizePath = consulInfo.AuthorizePath
 	// TODO (ilackarms): RequestTimeout:
 	inbound.AuthConfig = authConfig
 	inboundConfig.Inbound = inbound
@@ -164,12 +141,12 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 	connect.SetListenerConfig(listener, listenerConfig)
 	listener.SslConfig = &v1.SSLConfig{
 		SslSecrets: &v1.SSLConfig_SecretRef{
-			SecretRef: "certificates",
+			SecretRef: CertitificateSecretName,
 		},
 	}
 }
 
-func syncOutboundListener(listener *v1.Listener, upstream Upstream) {
+func syncOutboundListener(listener *v1.Listener, upstream consul.Upstream) {
 	listener.Name = upstream.DestinationName + "-outbound"
 	// TODO (ilackarms): support ipv6
 	listener.BindAddress = "127.0.0.1"

@@ -5,9 +5,10 @@ import (
 )
 
 type RunConfig struct {
-	Options          bootstrap.Options
-	GlooAddress      string
-	GlooPort         uint
-	ConfigDir        string
-	EnvoyPath        string
+	Options     bootstrap.Options
+	GlooAddress string
+	GlooPort    uint
+	UseUDS      bool
+	ConfigDir   string
+	EnvoyPath   string
 }

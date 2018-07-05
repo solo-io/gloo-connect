@@ -67,37 +67,33 @@ type ProxyConfig struct {
 var _ = Describe("ConsulConnect", func() {
 	var tmpdir string
 	var consulConfigDir string
-	var consulSession *gexec.Session
+	var bridgeConfigDir string
 	var pathToGlooBridge string
+	var envoypath string
+	var consulSession *gexec.Session
 	xdsPort := 7071
 
-	BeforeEach(func() {
-		glooBridge := filepath.Join(os.Getenv("GOPATH"), "src", "github.com/solo-io/gloo-connect/cmd")
-		_, err := os.Stat(glooBridge)
-		if os.IsNotExist(err) {
-			Skip("no glooBridge available skipping test")
-		}
-
+	BeforeSuite(func() {
+		var err error
 		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-connect/cmd")
 		Expect(err).ShouldNot(HaveOccurred())
 
-		envoypath := os.Getenv("ENVOY_PATH")
+		envoypath = os.Getenv("ENVOY_PATH")
+		if envoypath == "" {
+			envoypath, _ = exec.LookPath("envoy")
+		}
 		if envoypath == "" {
 			log.Warnf("running envoy from /usr/local/bin/envoy. to override, set ENVOY_PATH")
 			envoypath = "/usr/local/bin/envoy"
 		}
-		// generate the template
 
-		tmpdir, err = ioutil.TempDir("", "")
-		Expect(err).NotTo(HaveOccurred())
+	})
 
-		bridgeConfigDir := filepath.Join(tmpdir, "glooBridge-config")
-		err = os.Mkdir(bridgeConfigDir, 0755)
-		Expect(err).NotTo(HaveOccurred())
+	AfterSuite(func() {
+		gexec.CleanupBuildArtifacts()
+	})
 
-		consulConfigDir = filepath.Join(tmpdir, "consul-config")
-		err = os.Mkdir(consulConfigDir, 0755)
-		Expect(err).NotTo(HaveOccurred())
+	writeService := func(uds bool) {
 
 		args := []string{
 			pathToGlooBridge,
@@ -108,6 +104,18 @@ var _ = Describe("ConsulConnect", func() {
 			"--envoy-path",
 			envoypath,
 		}
+		if uds {
+			args = append(args, "--gloo-uds=true")
+		}
+
+		if os.Getenv("USE_DLV") == "1" {
+			dlv, err := exec.LookPath("dlv")
+			if err == nil {
+				dlvargs := []string{dlv, "exec", "--headless", "--listen", "localhost:2345", "--"}
+				args = append(dlvargs, args...)
+			}
+		}
+
 		svc := ConsulService{
 			Service: Service{
 				Name: "web",
@@ -134,12 +142,33 @@ var _ = Describe("ConsulConnect", func() {
 
 		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "service.json"), data, 0644)
 		Expect(err).NotTo(HaveOccurred())
+	}
+
+	BeforeEach(func() {
+		glooBridge := filepath.Join(os.Getenv("GOPATH"), "src", "github.com/solo-io/gloo-connect/cmd")
+		_, err := os.Stat(glooBridge)
+		if os.IsNotExist(err) {
+			Skip("no glooBridge available skipping test")
+		}
+
+		// generate the template
+
+		tmpdir, err = ioutil.TempDir("", "")
+		Expect(err).NotTo(HaveOccurred())
+
+		bridgeConfigDir = filepath.Join(tmpdir, "glooBridge-config")
+		err = os.Mkdir(bridgeConfigDir, 0755)
+		Expect(err).NotTo(HaveOccurred())
+
+		consulConfigDir = filepath.Join(tmpdir, "consul-config")
+		err = os.Mkdir(consulConfigDir, 0755)
+		Expect(err).NotTo(HaveOccurred())
+
 	})
 
 	AfterEach(func() {
 		gexec.TerminateAndWait("5s")
 		consulSession = nil
-		gexec.CleanupBuildArtifacts()
 
 		if tmpdir != "" {
 			os.RemoveAll(tmpdir)
@@ -154,7 +183,36 @@ var _ = Describe("ConsulConnect", func() {
 		Expect(err).NotTo(HaveOccurred())
 	}
 
-	It("should start envoy", func() {
+	It("should start envoy with gloo tcp", func() {
+		writeService(false)
+		runConsul()
+		time.Sleep(1 * time.Second)
+		Expect(consulSession).ShouldNot(gexec.Exit())
+		Eventually(consulSession.Out, "5s").Should(gbytes.Say("agent/proxy: starting proxy:"))
+
+		// check that a port was opened where consul says it should have been opened (get the port from consul connect and check that it is open)
+		resp, err := http.Get("http://127.0.0.1:8500/v1/agent/connect/proxy/web-proxy")
+		Expect(err).NotTo(HaveOccurred())
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		Expect(err).NotTo(HaveOccurred())
+
+		var cfg ProxyInfo
+		json.Unmarshal(body, &cfg)
+
+		//runFakeXds(cfg.Config.BindAddress, cfg.Config.BindPort)
+
+		time.Sleep(5 * time.Second)
+
+		conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", cfg.Config.BindAddress, cfg.Config.BindPort))
+		Expect(err).NotTo(HaveOccurred())
+
+		// We are connected! good enough!
+		conn.Close()
+	})
+
+	It("should start envoy with gloo uds", func() {
+		writeService(true)
 		runConsul()
 		time.Sleep(1 * time.Second)
 		Expect(consulSession).ShouldNot(gexec.Exit())
