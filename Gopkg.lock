@@ -44,6 +44,12 @@
   revision = "3df31a1ada83e310c2e24b267c8e8b68836547b4"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/armon/go-radix"
+  packages = ["."]
+  revision = "1fca145dffbcaa8fe914309b1ec0cfc67500fe61"
+
+[[projects]]
   name = "github.com/d4l3k/messagediff"
   packages = ["."]
   revision = "29f32d820d112dbd66e58492a6ffb7cc3106312b"
@@ -247,7 +253,19 @@
 
 [[projects]]
   name = "github.com/hashicorp/consul"
-  packages = ["api"]
+  packages = [
+    "acl",
+    "agent/cache",
+    "agent/connect",
+    "agent/consul/autopilot",
+    "agent/structs",
+    "api",
+    "connect",
+    "lib/freeport",
+    "sentinel",
+    "types",
+    "watch"
+  ]
   revision = "28141971f966e99916da2c5e461dd968746491cd"
   version = "v1.2.0"
 
@@ -265,6 +283,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/hashicorp/go-msgpack"
+  packages = ["codec"]
+  revision = "fa3f63826f7c23912c15263591e65d54d080b458"
+
+[[projects]]
+  branch = "master"
   name = "github.com/hashicorp/go-multierror"
   packages = ["."]
   revision = "b7773ae218740a7be65057fc60b366a49b538a44"
@@ -274,6 +298,24 @@
   name = "github.com/hashicorp/go-rootcerts"
   packages = ["."]
   revision = "6bb64b370b90e7ef1fa532be9e591a81c3493e00"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-sockaddr"
+  packages = ["."]
+  revision = "6d291a969b86c4b633730bfc6b8b9d64c3aafed9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-uuid"
+  packages = ["."]
+  revision = "27454136f0364f2d44b1276c552d69105cf8c498"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-version"
+  packages = ["."]
+  revision = "23480c0665776210b5fbbac6eaaee40e3e6a96b7"
 
 [[projects]]
   branch = "master"
@@ -301,8 +343,23 @@
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
+  name = "github.com/hashicorp/memberlist"
+  packages = ["."]
+  revision = "ce8abaa0c60c2d6bee7219f5ddf500e0a1457b28"
+  version = "v0.1.0"
+
+[[projects]]
+  name = "github.com/hashicorp/raft"
+  packages = ["."]
+  revision = "6d14f0c70869faabd9e60ba7ed88a6cbbd6a661f"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/hashicorp/serf"
-  packages = ["coordinate"]
+  packages = [
+    "coordinate",
+    "serf"
+  ]
   revision = "4b67f2c2b2bb5b748d934a6d48221062e43d2274"
 
 [[projects]]
@@ -381,10 +438,28 @@
   version = "v0.0.3"
 
 [[projects]]
+  name = "github.com/miekg/dns"
+  packages = ["."]
+  revision = "5a2b9fab83ff0f8bfc99684bd5f43a37abe560f1"
+  version = "v1.0.8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/copystructure"
+  packages = ["."]
+  revision = "d23ffcb85de31694d6ccaa23ccb4a03e55c1303f"
+
+[[projects]]
   branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
   revision = "3864e76763d94a6df2f9960b16a20a33da9f9a66"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/go-testing-interface"
+  packages = ["."]
+  revision = "a61a99592b77c9ba629d254a693acffaeb4b7e28"
 
 [[projects]]
   branch = "master"
@@ -397,6 +472,12 @@
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
   revision = "bb74f1db0675b241733089d5a1faa5dd8b0ef57b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/mitchellh/reflectwalk"
+  packages = ["."]
+  revision = "63d60e9d0dbc60cf9164e6510889b0db6683d98c"
 
 [[projects]]
   name = "github.com/modern-go/concurrent"
@@ -475,6 +556,12 @@
   version = "v0.8.0"
 
 [[projects]]
+  name = "github.com/pmezard/go-difflib"
+  packages = ["difflib"]
+  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/radovskyb/watcher"
   packages = ["."]
   revision = "6145e1439b9de93806925353403f91d2abbad8a5"
@@ -485,6 +572,12 @@
   packages = ["."]
   revision = "572520ed46dbddaed19ea3d9541bdd0494163693"
   version = "v0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/sean-/seed"
+  packages = ["."]
+  revision = "e2103e2c35297fb7e17febb81e49b312087a2372"
 
 [[projects]]
   name = "github.com/sethgrid/pester"
@@ -569,6 +662,21 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "github.com/stretchr/objx"
+  packages = ["."]
+  revision = "477a77ecc69700c7cdeb1fa9e129548e1c1c393c"
+  version = "v0.1.1"
+
+[[projects]]
+  name = "github.com/stretchr/testify"
+  packages = [
+    "assert",
+    "mock"
+  ]
+  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
+  version = "v1.2.2"
+
+[[projects]]
   name = "go.uber.org/atomic"
   packages = ["."]
   revision = "1ea20fb1cbb1cc08cbd0d913a96dead89aa18289"
@@ -596,13 +704,18 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "ed25519",
+    "ed25519/internal/edwards25519",
+    "ssh/terminal"
+  ]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
   packages = [
+    "bpf",
     "context",
     "context/ctxhttp",
     "html",
@@ -612,7 +725,11 @@
     "http2",
     "http2/hpack",
     "idna",
+    "internal/iana",
+    "internal/socket",
     "internal/timeseries",
+    "ipv4",
+    "ipv6",
     "trace"
   ]
   revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
@@ -973,6 +1090,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c7d9f8ebe2b7dddb5ed6bd008321a11ebc94107a27fb1d8ce8d89c3f3ae36e08"
+  inputs-digest = "0c0693fd9b3521d485e4a43fe439c2c06c28aea259343fabab42e5e3796ffae5"
   solver-name = "gps-cdcl"
   solver-version = 1
