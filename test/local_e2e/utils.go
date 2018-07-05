@@ -85,9 +85,12 @@ func TestPortOpen(address string, port uint) error {
 }
 
 func RunConsul(consulConfigDir string) *gexec.Session {
-
 	consul := exec.Command("consul", "agent", "-dev", "--config-dir="+consulConfigDir)
 	session, err := gexec.Start(consul, GinkgoWriter, GinkgoWriter)
 	Expect(err).NotTo(HaveOccurred())
+
+	// wait for consul to start
+	time.Sleep(time.Second)
+
 	return session
 }
