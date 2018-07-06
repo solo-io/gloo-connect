@@ -313,6 +313,11 @@ var _ = Describe("ConsulConnect", func() {
 			"20s",
 			"1s",
 		).ShouldNot(BeZero())
+		Eventually(
+			func() int { se, _, _ := client.Health().Connect("test", "", true, nil); return len(se) },
+			"20s",
+			"1s",
+		).ShouldNot(BeZero())
 
 		// connect to the web service from the test service
 		resp, err := http.Get("http://localhost:1334/test")
