@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/hashicorp/consul/connect"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -40,7 +38,7 @@ var _ = Describe("ConsulConnect", func() {
 
 	BeforeSuite(func() {
 		var err error
-		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-connect/cmd")
+		pathToGlooBridge, err = gexec.Build("github.com/solo-io/gloo-connect/cmd", "-gcflags", "all=-N -l")
 		Expect(err).ShouldNot(HaveOccurred())
 
 		envoypath = os.Getenv("ENVOY_PATH")
@@ -59,6 +57,28 @@ var _ = Describe("ConsulConnect", func() {
 	})
 
 	serviceWritten := false
+
+	getWebService := func(args []string) Service {
+		return Service{
+			Name: "web",
+			Port: svcPort,
+			Connect: Connect{
+				Proxy: Proxy{
+					ExecMode: "daemon",
+					Command:  args,
+					Config: Config{
+						Upstreams: []Upstream{
+							{
+								DestinationName: "consul",
+								LocalBindPort:   1234,
+							},
+						},
+					},
+				},
+			},
+		}
+	}
+
 	writeService := func(uds bool) {
 		// generate the template
 		args := []string{
@@ -85,24 +105,7 @@ var _ = Describe("ConsulConnect", func() {
 		}
 
 		svc := ConsulService{
-			Service: Service{
-				Name: "web",
-				Port: svcPort,
-				Connect: Connect{
-					Proxy: Proxy{
-						ExecMode: "daemon",
-						Command:  args,
-						Config: Config{
-							Upstreams: []Upstream{
-								{
-									DestinationName: "consul",
-									LocalBindPort:   1234,
-								},
-							},
-						},
-					},
-				},
-			},
+			Service: getWebService(args),
 		}
 
 		data, err := json.Marshal(svc)
@@ -113,9 +116,83 @@ var _ = Describe("ConsulConnect", func() {
 		serviceWritten = true
 	}
 
+	writeServices2 := func(two bool) {
+		// generate the template
+		args := []string{
+			pathToGlooBridge,
+			"bridge",
+			"--gloo-port",
+			fmt.Sprintf("%v", xdsPort),
+			"--conf-dir",
+			bridgeConfigDir,
+			"--envoy-path",
+			envoypath,
+			"--gloo-uds=true",
+		}
+		var svcs []Service
+
+		if two == false && os.Getenv("USE_DLV") == "1" {
+			dlv, err := exec.LookPath("dlv")
+			Expect(err).ToNot(HaveOccurred())
+			dlvargs := []string{dlv, "exec", "--headless", "--listen", "localhost:2345", "--"}
+			dlvargs = append(dlvargs, args...)
+			waitForInit = time.Hour
+			svcs = []Service{getWebService(dlvargs)}
+		} else {
+			svcs = []Service{getWebService(args)}
+		}
+
+		if two {
+			if os.Getenv("USE_DLV") == "1" {
+				dlv, err := exec.LookPath("dlv")
+				if err == nil {
+					dlvargs := []string{dlv, "exec", "--headless", "--listen", "localhost:2345", "--"}
+					args = append(dlvargs, args...)
+				}
+				waitForInit = time.Hour
+			}
+
+			svcs = append(svcs, Service{
+				Name: "test",
+				Port: svcPort + 1,
+				Connect: Connect{
+					Proxy: Proxy{
+						ExecMode: "daemon",
+						Command:  args,
+						Config: Config{
+							Upstreams: []Upstream{
+								{
+									DestinationName: "web",
+									LocalBindPort:   1334,
+								},
+							},
+						},
+					},
+				},
+			})
+		}
+
+		svc := ConsulServices{
+			Services: svcs,
+		}
+
+		data, err := json.Marshal(svc)
+		Expect(err).NotTo(HaveOccurred())
+
+		err = ioutil.WriteFile(filepath.Join(consulConfigDir, "service.json"), data, 0644)
+		Expect(err).NotTo(HaveOccurred())
+		serviceWritten = true
+	}
+
+	writeServices := func() {
+		writeServices2(true)
+	}
+	writeServiceInArray := func() {
+		writeServices2(false)
+	}
+
 	BeforeEach(func() {
 		testContext, cancel = context.WithCancel(context.Background())
-
 	})
 
 	AfterEach(func() {
@@ -169,6 +246,14 @@ var _ = Describe("ConsulConnect", func() {
 		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
 	})
 
+	It("should start envoy with gloo tcp registration as services", func() {
+		writeServiceInArray()
+		runConsulAndWait()
+		// check that a port was opened where consul says it should have been opened (get the port from consul connect and check that it is open)
+		cfg := GetProxyInfo()
+		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
+	})
+
 	It("should start envoy with gloo uds", func() {
 		writeService(true)
 		runConsulAndWait()
@@ -176,7 +261,7 @@ var _ = Describe("ConsulConnect", func() {
 		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
 	})
 
-	FIt("should start envoy with gloo http", func() {
+	It("should start envoy with gloo http", func() {
 		// pretend we are the webservice, fail the first request, and wait for the second one.
 		// start the web service before so that consul can detect as healthy
 		i := 0
@@ -206,12 +291,12 @@ var _ = Describe("ConsulConnect", func() {
 			h.Shutdown(ctx)
 			cancel()
 		}()
-
+		writeServices()
 		runConsul()
-		configHttpCmd := exec.Command(pathToGlooBridge, "http")
-		configHttpCmd.Stderr = GinkgoWriter
-		configHttpCmd.Stdout = GinkgoWriter
-		err := configHttpCmd.Run()
+		configHTTPCmd := exec.Command(pathToGlooBridge, "http")
+		configHTTPCmd.Stderr = GinkgoWriter
+		configHTTPCmd.Stdout = GinkgoWriter
+		err := configHTTPCmd.Run()
 		Expect(err).NotTo(HaveOccurred())
 		waitForProxy()
 
@@ -229,26 +314,9 @@ var _ = Describe("ConsulConnect", func() {
 			"1s",
 		).ShouldNot(BeZero())
 
-		// try to connect to the service created
-		svc, err := connect.NewService("test-service", client)
-		Expect(err).NotTo(HaveOccurred())
-		defer svc.Close()
+		// connect to the web service from the test service
+		resp, err := http.Get("http://localhost:1334/test")
 
-		httpClient := svc.HTTPClient()
-		/* hack */
-		// TODO: remove this when possible
-		resolver := &connect.ConsulResolver{
-			Client: client,
-			Name:   "web",
-		}
-		dialTLS := func(network,
-			addr string) (net.Conn, error) {
-			return svc.Dial(context.Background(), resolver)
-		}
-		httpClient.Transport.(*http.Transport).DialTLS = dialTLS
-		/* end hack */
-
-		resp, err := httpClient.Get("https://web.service.consul/test")
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(200))
 

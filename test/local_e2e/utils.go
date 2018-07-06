@@ -17,6 +17,9 @@ import (
 type ConsulService struct {
 	Service Service `json:"service"`
 }
+type ConsulServices struct {
+	Services []Service `json:"services"`
+}
 
 type Service struct {
 	Name    string  `json:"name"`
