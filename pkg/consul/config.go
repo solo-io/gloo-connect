@@ -21,6 +21,13 @@ type ProxyConfig struct {
 	Upstreams           []Upstream `json:"upstreams" mapstructure:"upstreams"`
 }
 
+type ProxyConfigBad struct {
+	BindAddress         string   `json:"bind_address" mapstructure:"bind_address"`
+	BindPort            uint     `json:"bind_port" mapstructure:"bind_port"`
+	LocalServiceAddress string   `json:"local_service_address" mapstructure:"local_service_address"`
+	Upstreams           Upstream `json:"upstreams" mapstructure:"upstreams"`
+}
+
 type Upstream struct {
 	DestinationName string `json:"destination_name" mapstructure:"destination_name"`
 	DestinationType string `json:"destination_type" mapstructure:"destination_type"`
@@ -49,10 +56,19 @@ func NewConsulConnectConfigFromEnv() (ConsulConnectConfig, error) {
 
 func GetProxyConfig(pcfg *api.ConnectProxyConfig) (*ProxyConfig, error) {
 	cfg := new(ProxyConfig)
-
 	err := mapstructure.Decode(pcfg.Config, cfg)
 	if err != nil {
-		return nil, err
+		// workaround to consul bug
+		badcfg := new(ProxyConfigBad)
+		err := mapstructure.Decode(pcfg.Config, badcfg)
+		if err != nil {
+			return nil, err
+		}
+		cfg.BindAddress = badcfg.BindAddress
+		cfg.BindPort = badcfg.BindPort
+		cfg.LocalServiceAddress = badcfg.LocalServiceAddress
+		cfg.Upstreams = []Upstream{badcfg.Upstreams}
+		return cfg, nil
 	}
 	return cfg, nil
 }
