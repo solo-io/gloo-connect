@@ -17,7 +17,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
     
 ## Gloo Connect Features
 ### Consul Connect: Layer 3/4
-* **Security**: AuthN, AuthZ, intents, policy, mTLS
+* **Security**: AuthN, AuthZ, intentions, policy, mTLS
 * **Networking**: TCP routing 
 ### Gloo Connect: Layer 7
 * **Security**: RBAC
