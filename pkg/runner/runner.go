@@ -102,6 +102,9 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 	if err != nil {
 		return err
 	}
+
+	runConfig.Options.ConsulOptions.Connect = true
+
 	runConfig.Options.ConsulOptions.Token = cfg.Token()
 	runConfig.Options.ConsulOptions.Address = consulCfg.Address
 	runConfig.Options.ConsulOptions.Datacenter = consulCfg.Datacenter
@@ -179,6 +182,18 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 	ctx, cancelTerm := cancelOnTerm(ctx)
 	defer cancelTerm()
 
+	log.Printf("creating cert fetcher")
+	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("getting first copy of local certs")
+	// we need one root cert and client cert to begin:
+	rootcert := <-cf.RootCerts()
+	leaftcert := <-cf.Certs()
+	updateCerts(secrets, rootcert, leaftcert)
+
 	//create stop channel from context
 	stop := make(chan struct{})
 	go func() {
@@ -197,19 +212,6 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 			log.Fatalf("failed to start upstream discovery: %v", err)
 		}
 	}()
-
-	log.Printf("creating cert fetcher")
-	cf, err := consul.NewCertificateFetcher(ctx, configWriter, cfg)
-	if err != nil {
-		return err
-	}
-
-	log.Printf("getting first copy of local certs")
-	// we need one root cert and client cert to begin:
-	rootcert := <-cf.RootCerts()
-	leaftcert := <-cf.Certs()
-
-	updateCerts(secrets, rootcert, leaftcert)
 
 	id := &envoycore.Node{
 		Id:      rolename + "~" + getNodeName(),
