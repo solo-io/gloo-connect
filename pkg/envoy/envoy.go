@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net"
 	"os"
 	"os/exec"
@@ -42,6 +43,7 @@ type envoy struct {
 	glooPort     uint
 	id           *envoycore.Node
 	envoyBin     string
+	baseID       uint32
 
 	children []*EnvoyInstance
 
@@ -59,6 +61,7 @@ func NewEnvoy(envoyBin string, glooAddress net.Addr, id *envoycore.Node) Envoy {
 		glooAddress: glooAddress,
 		id:          id,
 		envoyBin:    envoyBin,
+		baseID:      uint32(rand.Int31()),
 
 		configChanged: make(chan struct{}, 10),
 		doneInstances: make(chan *EnvoyInstance),
@@ -247,7 +250,7 @@ func (e *envoy) Exit() {
 
 func (e *envoy) startEnvoy() (*EnvoyInstance, error) {
 	// start new envoy and pass the restart epoch
-	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--config-yaml", e.cfg, "--v2-config-only")
+	envoyCommand := exec.Command(e.envoyBin, "--restart-epoch", fmt.Sprintf("%d", e.restartEpoch), "--base-id", fmt.Sprintf("%d", e.baseID), "--config-yaml", e.cfg, "--v2-config-only")
 	envoyCommand.Stderr = os.Stderr
 	envoyCommand.Stdout = os.Stderr
 	err := envoyCommand.Start()
