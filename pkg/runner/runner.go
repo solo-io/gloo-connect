@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -134,14 +136,21 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 		},
 	}
 
-	glooXdsAddr := func() net.Addr {
-		if runConfig.UseUDS {
-			// return abstract namespace unix domain socket.
-			// note that in both go and envoy the @ will be replaced with \0. so we're good to go.
-			return &net.UnixAddr{Net: "unix", Name: "@" + randomStringForUDS()}
+	var glooXdsAddr net.Addr
+	if runConfig.UseUDS {
+		// return abstract namespace unix domain socket.
+		// note that in both go and envoy the @ will be replaced with \0. so we're good to go.
+		if runtime.GOOS == "linux" {
+			glooXdsAddr = &net.UnixAddr{Net: "unix", Name: "@" + randomStringForUDS()}
+		} else {
+
+			unixsock := filepath.Join(os.TempDir(), randomStringForUDS())
+			glooXdsAddr = &net.UnixAddr{Net: "unix", Name: unixsock}
+			defer os.Remove(unixsock)
 		}
-		return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: int(runConfig.GlooPort)}
-	}()
+	} else {
+		glooXdsAddr = &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1), Port: int(runConfig.GlooPort)}
+	}
 
 	log.Printf("Using address %v", glooXdsAddr)
 
