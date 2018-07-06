@@ -72,6 +72,8 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 			return err
 		}
 	}
+	// TODO: merge routes
+	vService.Routes = nil
 	vService.Routes = append(vService.Routes, &v1.Route{
 		Matcher: &v1.Route_RequestMatcher{RequestMatcher: route.Matcher},
 		SingleDestination: &v1.Destination{
@@ -84,6 +86,11 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 			},
 		},
 	})
+	vService, err = c.Store.V1().VirtualServices().Update(vService)
+	if err != nil {
+		return err
+	}
+
 	// TODO(yuval-k): refactor these keys to a shared package with https://github.com/solo-io/gloo-connect/pull/13/files#diff-dd009a95782c9f59f4baeadcd504edd6R181
 	selector := map[string]string{
 		"destination": destination,
@@ -91,15 +98,26 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 	if origin != allOrigins {
 		selector["service"] = origin
 	}
-	attribute := &v1.Attribute{
-		AttributeType: &v1.Attribute_ListenerAttribute{
-			ListenerAttribute: &v1.ListenerAttribute{
-				Selector:        selector,
-				VirtualServices: []string{name},
-			},
+
+	attribute, err := c.Store.V1().Attributes().Get(name)
+	if err != nil {
+		attribute, err = c.Store.V1().Attributes().Create(&v1.Attribute{
+			Name: name,
+			AttributeType: &v1.Attribute_ListenerAttribute{
+				ListenerAttribute: &v1.ListenerAttribute{}},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	attribute.AttributeType = &v1.Attribute_ListenerAttribute{
+		ListenerAttribute: &v1.ListenerAttribute{
+			Selector:        selector,
+			VirtualServices: []string{name},
 		},
 	}
-	_, err = c.Store.V1().Attributes().Create(attribute)
+	_, err = c.Store.V1().Attributes().Update(attribute)
 	return err
 }
 
