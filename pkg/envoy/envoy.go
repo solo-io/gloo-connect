@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"runtime"
 	"strconv"
 	"syscall"
 	"time"
@@ -179,6 +180,10 @@ func (e *envoy) getBootstrapConfig() (envoybootstrap.Bootstrap, error) {
 				},
 			},
 		},
+	}
+
+	if runtime.GOOS != "linux" {
+		bootstrap.Admin.AccessLogPath = "/dev/null"
 	}
 
 	return bootstrap, nil
