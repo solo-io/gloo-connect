@@ -75,7 +75,8 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 	// TODO: merge routes
 	vService.Routes = nil
 	vService.Routes = append(vService.Routes, &v1.Route{
-		Matcher: &v1.Route_RequestMatcher{RequestMatcher: route.Matcher},
+		Extensions: route.Config,
+		Matcher:    &v1.Route_RequestMatcher{RequestMatcher: route.Matcher},
 		SingleDestination: &v1.Destination{
 			DestinationType: &v1.Destination_Upstream{
 				Upstream: &v1.UpstreamDestination{
