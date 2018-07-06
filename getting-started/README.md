@@ -1,91 +1,77 @@
 # Gloo Consul integration
 
-# Configuration
+# Background
 
 Binaries that we will use:
 
-- A consul binary in our path
-- A envoy binary with gloo plugins
-- A gloo consul bridge binary
+- A Consul binary in our path
+- A envoy binary with gloo plugins (specifically the envoy-consul-connect plugin that enables support for Consul Connect intentions based auth)
+- A gloo-connect binary
 
-Additionally, you will need a service to connect to. we have packaged an example go service 
-in service.go file.
+You can find all three binaries in the release bundle.
+
+## Demo web  µ-service
+
+In this guide we will run a demo µ-service to simulate a microservice with an HTTP interface. 
+The source of the service is in service.go.
+This simulated web µ-service returns the contents of the '/usr/share/doc' folder.
+The service fails every other request, and we will use it to demonstrate L7 (http) features.
 
 # Prepare environment
 
-Commands should be run in a terminal, and cd to the folder containing this file. 
-Before running each command we will source `prepare-env.sh` to create folders and environment variables.
-
-## Configure consul
-
-Register the consul bridge:
-
-```bash
-#  Create folders and environment variables
-. prepare-env.sh
-
-cat > $CONSUL_CONFIG_HOME/connect.json <<EOF
-{
-    "connect" : {
-    "enabled" : true,
-    "proxy_defaults" : {
-        "exec_mode" : "daemon",
-        "daemon_command" : ["${GLOO_BRIDGE_PATH}", "--gloo-address", "localhost", "--gloo-port", "8081", "--conf-dir","${GLOO_CONSUL_BRIDGE_HOME}", "--envoy-path","${ENVOY_PATH}",
-        "--storage.type","file",
-        "--secrets.type","file",
-        "--files.type","file",
-        "--file.config.dir","${GLOO_CONFIG_HOME}/_gloo_config",
-        "--file.files.dir","${GLOO_CONFIG_HOME}/_gloo_config/files",
-        "--file.secret.dir","${GLOO_CONFIG_HOME}/_gloo_config/secrets"
-        ]
-        }
-    }
-}
-EOF
-```
+Commands should be run in a terminal. cd to the folder containing this file. 
+The envoy and gloo-connect binarie should be either in this folder, or in your path.
 
 ## Start and register a microservice
 
-Start your test service:
-
+Start your demo µ-service to run in the background:
 
 ```
 go run service.go&
 ``` 
 
-...and reigster it with consul:
-```
-cat > $CONSUL_CONFIG_HOME/service.json <<EOF
-{
-    "service": {
-        "name": "web",
-        "port": 8080,
-        "connect": {
-            "proxy": {}
-        }
-    }
-}
-EOF
+## Run consul
+
+Configure and run Consul:
+
+```bash
+#  This script create folders, environment variables, consul configuration and starts consul.
+./run-consul.sh
 ```
 
-Start consul:
 
-```
-consul agent -dev --config-dir=$CONSUL_CONFIG_HOME
-```
-
-# What's happening
-At this point, consul will start the the gloo bridge as a managed proxy, that in turn will start and configure gloo and envoy to be part of the mesh.
+# Enter the mesh
+At this point, Consul will start gloo-connect as a managed proxy, that in turn will start and configure envoy as a part of the mesh.
 
 ## Test!
 
-Use consul to create a proxy (as specified in the debugging section in the consul docs),
-and use curl to test!:
+We configured Consul with an additional test service. The demo µ-service is configured as an upstream for the test service, using port 1234. This any connection through port 1234 is a connection made to the web service as the test service. So to test our mesh, all we need to do is this:
 ```
-consul connect proxy \
-  -service operator-test \
-  -upstream web:8181
-curl http://localhost:8181
+curl http://localhost:1234
+```
+Remember - As the microservice fails every other request, you will see a different result on each invocation of curl. Great!
+
+## L7 in Action
+
+As you can see, when you curl the service multiple times it sometimes fails ☹. To overcome this, we can use gloo-connect layer 7 features and add a re-try:
+```
+gloo-connect http set service web --retries=3
 ```
 
+This tells configures gloo and envoy, and instructs them to automatically re-try requests sent to the service up to 3 times.
 
+Now try:
+```
+curl http://localhost:1234
+```
+
+And you will see it work consistently!
+
+# Cleanup:
+
+To stop Consul, just hit CNTRL+C and let it terminate gracefully (which will terminate the other processes as well).
+
+Some configuration files and logs were created in run-data folder. to clean up just remove the folder:
+```
+rm -rf ./run-data
+```
