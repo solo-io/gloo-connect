@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/solo-io/gloo-connect/cmd/get"
+	"github.com/solo-io/gloo-connect/cmd/set"
 	"github.com/solo-io/gloo-connect/pkg/cmd"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap"
@@ -30,11 +32,6 @@ var rootCmd = &cobra.Command{
 }
 
 func run() error {
-	// always use consul for storage and service discovery
-	rc.Options = opts
-	rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
-	rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-
 	store, err := configstorage.Bootstrap(rc.Options)
 	if err != nil {
 		return err
@@ -48,6 +45,10 @@ func run() error {
 func init() {
 	// for storage and service discovery
 	flags.AddConsulFlags(rootCmd, &opts)
+	// always use consul for storage and service discovery
+	rc.Options = opts
+	rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+	rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
 
 	bridgeCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
 	bridgeCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
@@ -55,7 +56,7 @@ func init() {
 	bridgeCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	bridgeCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 
-	rootCmd.AddCommand(bridgeCmd, httpCmd)
+	rootCmd.AddCommand(bridgeCmd, httpCmd, get.Cmd(), set.Cmd(&rc))
 }
 
 var bridgeCmd = &cobra.Command{
@@ -71,10 +72,6 @@ var httpCmd = &cobra.Command{
 	Short: "manage HTTP features for in-mesh services",
 	Long:  "",
 	RunE: func(_ *cobra.Command, args []string) error {
-		rc.Options = opts
-		rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
-		rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
-
 		store, err := configstorage.Bootstrap(rc.Options)
 		if err != nil {
 			return err

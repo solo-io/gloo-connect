@@ -293,7 +293,8 @@ var _ = Describe("ConsulConnect", func() {
 		}()
 		writeServices()
 		runConsul()
-		configHTTPCmd := exec.Command(pathToGlooBridge, "http")
+		// configHTTPCmd := exec.Command(pathToGlooBridge, "http")
+		configHTTPCmd := exec.Command(pathToGlooBridge, "set", "service", "web", "--retries=10")
 		configHTTPCmd.Stderr = GinkgoWriter
 		configHTTPCmd.Stdout = GinkgoWriter
 		err := configHTTPCmd.Run()
@@ -301,6 +302,7 @@ var _ = Describe("ConsulConnect", func() {
 		waitForProxy()
 
 		cfg := GetProxyInfo()
+		// time.Sleep(time.Hour)
 
 		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
 
