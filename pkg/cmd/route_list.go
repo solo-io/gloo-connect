@@ -41,7 +41,7 @@ func (c *GlooClient) ConfigureService(serviceType string, retries uint32) error 
 	fmt.Println(retries)
 	return c.EnableBasicHttp("", serviceType, extensions.EncodeRouteExtensionSpec(extensions.RouteExtensionSpec{
 		MaxRetries: retries,
-		Timeout:    time.Minute,
+		// Timeout:    time.Minute, TODO(mitchdraft) - pass this as a flag (update during pkg refactor)
 	}))
 }
 
