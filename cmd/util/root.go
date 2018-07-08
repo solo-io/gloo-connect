@@ -5,10 +5,12 @@ import (
 	"strings"
 
 	"github.com/hashicorp/consul/api"
+	"github.com/solo-io/gloo/pkg/bootstrap"
 )
 
-func PrintConsulServices() {
-	s, _ := ListConsulServices(api.DefaultConfig())
+func PrintConsulServices(o *bootstrap.ConsulOptions) {
+	//o := bootstrap.ConsulOptions{}
+	s, _ := ListConsulServices(o.ToConsulConfig())
 	fmt.Println("consul services: ", s)
 }
 

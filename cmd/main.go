@@ -21,10 +21,7 @@ func main() {
 	}
 }
 
-var (
-	opts bootstrap.Options
-	rc   runner.RunConfig
-)
+var rc = runner.RunConfig{}
 
 var rootCmd = &cobra.Command{
 	Use:   "gloo-connect",
@@ -42,13 +39,18 @@ func run() error {
 	return nil
 }
 
-func init() {
+func initRunnerConfig(c *runner.RunConfig) {
+	var opts = bootstrap.Options{}
 	// for storage and service discovery
 	flags.AddConsulFlags(rootCmd, &opts)
 	// always use consul for storage and service discovery
-	rc.Options = opts
-	rc.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
-	rc.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+	c.Options = opts
+	c.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
+	c.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
+}
+
+func init() {
+	initRunnerConfig(&rc)
 
 	bridgeCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
 	bridgeCmd.PersistentFlags().UintVar(&rc.GlooPort, "gloo-port", 8081, "port where gloo should serve xds config to envoy")
@@ -56,7 +58,7 @@ func init() {
 	bridgeCmd.PersistentFlags().StringVar(&rc.ConfigDir, "conf-dir", "", "config dir to hold envoy config file")
 	bridgeCmd.PersistentFlags().StringVar(&rc.EnvoyPath, "envoy-path", "", "path to envoy binary")
 
-	rootCmd.AddCommand(bridgeCmd, httpCmd, get.Cmd(), set.Cmd(&rc))
+	rootCmd.AddCommand(bridgeCmd, httpCmd, get.Cmd(&rc), set.Cmd(&rc))
 }
 
 var bridgeCmd = &cobra.Command{
