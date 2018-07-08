@@ -294,7 +294,7 @@ var _ = Describe("ConsulConnect", func() {
 		writeServices()
 		runConsul()
 		// configHTTPCmd := exec.Command(pathToGlooBridge, "http")
-		configHTTPCmd := exec.Command(pathToGlooBridge, "set", "service", "web", "--retries=10")
+		configHTTPCmd := exec.Command(pathToGlooBridge, "set", "service", "web", "--retries=10", "--http")
 		configHTTPCmd.Stderr = GinkgoWriter
 		configHTTPCmd.Stdout = GinkgoWriter
 		err := configHTTPCmd.Run()
