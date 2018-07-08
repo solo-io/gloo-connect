@@ -9,7 +9,6 @@ import (
 )
 
 func PrintConsulServices(o *bootstrap.ConsulOptions) {
-	//o := bootstrap.ConsulOptions{}
 	s, _ := ListConsulServices(o.ToConsulConfig())
 	fmt.Println("consul services: ", s)
 }
