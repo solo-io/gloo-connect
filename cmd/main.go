@@ -40,16 +40,15 @@ func run() error {
 }
 
 func initRunnerConfig(c *runner.RunConfig) {
-	var opts = bootstrap.Options{}
-	// for storage and service discovery
-	flags.AddConsulFlags(rootCmd, &opts)
 	// always use consul for storage and service discovery
-	c.Options = opts
 	c.Options.ConfigStorageOptions.Type = bootstrap.WatcherTypeConsul
 	c.Options.FileStorageOptions.Type = bootstrap.WatcherTypeConsul
 }
 
 func init() {
+	// for storage and service discovery
+	flags.AddConsulFlags(rootCmd, &rc.Options)
+
 	initRunnerConfig(&rc)
 
 	bridgeCmd.PersistentFlags().StringVar(&rc.GlooAddress, "gloo-address", "127.0.0.1", "bind address where gloo should serve xds config to envoy")
