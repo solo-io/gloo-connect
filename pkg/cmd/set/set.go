@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/solo-io/gloo-connect/pkg/cmd/gloo_client"
+	"github.com/solo-io/gloo-connect/pkg/cmd/glooclient"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
 	"github.com/spf13/cobra"
@@ -42,7 +42,7 @@ func cmdSetServices(rc *runner.RunConfig) *cobra.Command {
 				return err
 			}
 
-			gc := gloo_client.GlooClient{Store: store}
+			gc := glooclient.GlooClient{Store: store}
 
 			return gc.ConfigureService(args[0], serviceFlags.retries, serviceFlags.timeout)
 		},

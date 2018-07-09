@@ -1,4 +1,4 @@
-package gloo_client
+package glooclient
 
 import (
 	"fmt"
