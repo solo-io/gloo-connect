@@ -21,7 +21,7 @@ func Cmd(rc *runner.RunConfig) *cobra.Command {
 	flags.AddConsulFlags(cmd, &rc.Options)
 
 	initRunnerConfig(rc)
-	cmd.AddCommand(bridge.Cmd(rc), http.Cmd(rc), get.Cmd(rc), set.Cmd(rc))
+	cmd.AddCommand(bridge.Cmd(rc), http.Cmd(rc), get.Cmd(rc), set.Cmd(rc), completionCmd())
 	return cmd
 }
 
