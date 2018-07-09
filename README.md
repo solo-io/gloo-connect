@@ -32,7 +32,7 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 ## Architecture Overview
 <BR>
 <p align="center">
-    <img src="docs/figures/architecture.png" alt="GlooConnect_architecture" width="800" height="248">
+    <img src="docs/figures/consul_gloo_integration.png" alt="GlooConnect_architecture" width="800" height="422">
 </p>
 <BR>
 

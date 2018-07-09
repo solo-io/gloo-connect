@@ -2,7 +2,7 @@
 
 The architecture of Gloo Connect can be understood as follows:
 
-![Architecture](architecture-gloo-connect.png "Gloo Connect Architecture")
+![Architecture](../../figures/consul_gloo_integration.png "Gloo Connect Architecture")
 
 A new service with connect settings is added to [Consul](https://www.consul.io/docs/index.html) using Gloo Connect as a managed proxy. 
 
