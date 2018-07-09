@@ -8,6 +8,10 @@ import (
 	"github.com/solo-io/gloo/pkg/bootstrap"
 )
 
+const (
+	allOrigins = "all-origins"
+)
+
 func PrintConsulServices(o *bootstrap.ConsulOptions) {
 	s, _ := ListConsulServices(o.ToConsulConfig())
 	fmt.Println("consul services: ", s)
