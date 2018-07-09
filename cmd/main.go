@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/solo-io/gloo-connect/cmd/get"
-	"github.com/solo-io/gloo-connect/cmd/set"
 	"github.com/solo-io/gloo-connect/pkg/cmd"
+	"github.com/solo-io/gloo-connect/pkg/cmd/get"
+	"github.com/solo-io/gloo-connect/pkg/cmd/set"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap"
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
