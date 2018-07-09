@@ -1,7 +1,7 @@
 package get
 
 import (
-	"github.com/solo-io/gloo-connect/cmd/util"
+	"github.com/solo-io/gloo-connect/pkg/cmd/util"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/spf13/cobra"
 )
