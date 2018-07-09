@@ -3,7 +3,7 @@ package set
 // maybe call this parameter "activate"?
 import (
 	"errors"
-	glooconnectcmd "github.com/solo-io/gloo-connect/pkg/cmd"
+	"github.com/solo-io/gloo-connect/pkg/cmd/gloo_client"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
 	"github.com/spf13/cobra"
@@ -39,7 +39,7 @@ func cmdSetServices(rc *runner.RunConfig) *cobra.Command {
 				return err
 			}
 
-			gc := glooconnectcmd.GlooClient{Store: store}
+			gc := gloo_client.GlooClient{Store: store}
 
 			return gc.ConfigureService(args[0], serviceFlags.retries)
 		},
