@@ -3,6 +3,8 @@ package set
 // maybe call this parameter "activate"?
 import (
 	"errors"
+	"time"
+
 	"github.com/solo-io/gloo-connect/pkg/cmd/gloo_client"
 	"github.com/solo-io/gloo-connect/pkg/runner"
 	"github.com/solo-io/gloo/pkg/bootstrap/configstorage"
@@ -12,6 +14,7 @@ import (
 type serviceFlagsType struct {
 	retries uint32
 	http    bool
+	timeout time.Duration
 }
 
 var serviceFlags = serviceFlagsType{}
@@ -41,11 +44,12 @@ func cmdSetServices(rc *runner.RunConfig) *cobra.Command {
 
 			gc := gloo_client.GlooClient{Store: store}
 
-			return gc.ConfigureService(args[0], serviceFlags.retries)
+			return gc.ConfigureService(args[0], serviceFlags.retries, serviceFlags.timeout)
 		},
 	}
 	cmd.PersistentFlags().Uint32VarP(&serviceFlags.retries, "retries", "", 0, "max number of http connection retries. Value of \"0\" specifies continuous connection retries. Default 0")
 	cmd.PersistentFlags().BoolVarP(&serviceFlags.http, "http", "", false, "whether http mode should be used, default false")
+	cmd.PersistentFlags().DurationVarP(&serviceFlags.timeout, "timeout", "", 0, "connection timeout duration (2m, 1h, 20s, etc.). Value of \"0\" indicates no timeout. Default 0")
 	return cmd
 }
 

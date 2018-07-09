@@ -34,11 +34,14 @@ const (
 	allOrigins = "all-origins"
 )
 
-func (c *GlooClient) ConfigureService(serviceType string, retries uint32) error {
-	return c.EnableBasicHttp("", serviceType, extensions.EncodeRouteExtensionSpec(extensions.RouteExtensionSpec{
+func (c *GlooClient) ConfigureService(serviceType string, retries uint32, timeout time.Duration) error {
+	res := extensions.RouteExtensionSpec{
 		MaxRetries: retries,
-		// Timeout:    time.Minute, TODO(mitchdraft) - pass this as a flag (update during pkg refactor)
-	}))
+	}
+	if timeout > 0 {
+		res.Timeout = timeout
+	}
+	return c.EnableBasicHttp("", serviceType, extensions.EncodeRouteExtensionSpec(res))
 }
 
 func (c *GlooClient) Demo() error {
