@@ -9,3 +9,5 @@ getting-started/gloo-connect-config/
 getting-started/pids/
 test/local_e2e/web-proxy-stderr.log
 test/local_e2e/web-proxy-stdout.log
+test/local_e2e/test-proxy-stderr.log
+test/local_e2e/test-proxy-stdout.log
