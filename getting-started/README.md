@@ -10,7 +10,7 @@ Binaries that we will use:
 
 You can find all three binaries in the release bundle.
 
-## Demo web  µ-service
+## Demo web µ-service
 
 In this guide we will run a demo µ-service to simulate a microservice with an HTTP interface. 
 The source of the service is in service.go.
@@ -58,7 +58,7 @@ As you can see, when you curl the service multiple times it sometimes fails ☹.
 gloo-connect set services web --http --retries=3
 ```
 
-This tells configures gloo and envoy, and instructs them to automatically re-try requests sent to the service up to 3 times.
+This configures gloo and envoy, and instructs them to automatically re-try requests sent to the service up to 3 times.
 
 Now try:
 ```
