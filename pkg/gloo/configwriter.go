@@ -11,10 +11,9 @@ import (
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/log"
 	"github.com/solo-io/gloo/pkg/plugins/connect"
+	pconsul "github.com/solo-io/gloo/pkg/plugins/consul"
 	"github.com/solo-io/gloo/pkg/storage"
 )
-
-const CertitificateSecretName = "certificates"
 
 type ConfigWriter struct {
 	roleName   string
@@ -145,7 +144,7 @@ func syncInboundListener(listener *v1.Listener, pcfg *api.ConnectProxyConfig, cf
 	connect.SetListenerConfig(listener, listenerConfig)
 	listener.SslConfig = &v1.SSLConfig{
 		SslSecrets: &v1.SSLConfig_SecretRef{
-			SecretRef: CertitificateSecretName,
+			SecretRef: pconsul.LeafCertificateSecret,
 		},
 	}
 }

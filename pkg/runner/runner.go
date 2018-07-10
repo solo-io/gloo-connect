@@ -31,6 +31,7 @@ import (
 	controlplane "github.com/solo-io/gloo/pkg/control-plane/bootstrap"
 	"github.com/solo-io/gloo/pkg/control-plane/eventloop"
 	"github.com/solo-io/gloo/pkg/log"
+	pconsul "github.com/solo-io/gloo/pkg/plugins/consul"
 	"github.com/solo-io/gloo/pkg/storage"
 	"github.com/solo-io/gloo/pkg/storage/dependencies"
 	"github.com/solo-io/gloo/pkg/upstream-discovery"
@@ -70,7 +71,7 @@ func cancelOnTerm(ctx context.Context) (context.Context, context.CancelFunc) {
 func updateCerts(secrets dependencies.SecretStorage, rootCas types.Certificates, leafCert types.CertificateAndKey) error {
 
 	certificates := &dependencies.Secret{
-		Ref: gloo.CertitificateSecretName,
+		Ref: pconsul.LeafCertificateSecret,
 		Data: map[string]string{
 			v1.SslCertificateChainKey: string(leafCert.Certificate),
 			v1.SslPrivateKeyKey:       string(leafCert.PrivateKey),
@@ -104,8 +105,6 @@ func Run(runConfig RunConfig, store storage.Interface) error {
 	if err != nil {
 		return err
 	}
-
-	runConfig.Options.ConsulOptions.Connect = true
 
 	runConfig.Options.ConsulOptions.Token = cfg.Token()
 	runConfig.Options.ConsulOptions.Address = consulCfg.Address

@@ -3,10 +3,13 @@ package glooclient
 import (
 	"fmt"
 
+	"github.com/solo-io/gloo/pkg/plugins/consul"
+
+	"time"
+
 	"github.com/gogo/protobuf/types"
 	"github.com/solo-io/gloo/pkg/api/types/v1"
 	"github.com/solo-io/gloo/pkg/storage"
-	"time"
 
 	"github.com/solo-io/gloo/pkg/coreplugins/route-extensions"
 )
@@ -88,9 +91,7 @@ func (c *GlooClient) AddRoute(origin, destination string, route Route) error {
 		SingleDestination: &v1.Destination{
 			DestinationType: &v1.Destination_Upstream{
 				Upstream: &v1.UpstreamDestination{
-					// TODO(yuval-k): make sure destination name matches the upstream name as known to gloo
-					// need to make sure upstream is added without tags (see gloo/pkg/plugins/consul/plugin.go)
-					Name: destination,
+					Name: consul.UpstreamNameForConnectService(destination),
 				},
 			},
 		},
