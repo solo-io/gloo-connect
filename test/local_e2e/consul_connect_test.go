@@ -66,14 +66,7 @@ var _ = Describe("ConsulConnect", func() {
 				Proxy: Proxy{
 					ExecMode: "daemon",
 					Command:  args,
-					Config: Config{
-						Upstreams: []Upstream{
-							{
-								DestinationName: "consul",
-								LocalBindPort:   1234,
-							},
-						},
-					},
+					Config:   Config{},
 				},
 			},
 		}
@@ -131,7 +124,7 @@ var _ = Describe("ConsulConnect", func() {
 		}
 		var svcs []Service
 
-		if two == false && os.Getenv("USE_DLV") == "1" {
+		if (two == false && os.Getenv("USE_DLV") == "1") || os.Getenv("USE_DLV") == "2" {
 			dlv, err := exec.LookPath("dlv")
 			Expect(err).ToNot(HaveOccurred())
 			dlvargs := []string{dlv, "exec", "--headless", "--listen", "localhost:2345", "--"}
@@ -301,10 +294,12 @@ var _ = Describe("ConsulConnect", func() {
 		Expect(err).NotTo(HaveOccurred())
 		waitForProxy()
 
+		// give consul time to initialize
+		time.Sleep(1 * time.Second)
 		cfg := GetProxyInfo()
-		// time.Sleep(time.Hour)
+		Expect(cfg.Config.BindPort).NotTo(BeZero())
 
-		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "1s").Should(BeNil())
+		Eventually(func() error { return TestPortOpen(cfg.Config.BindAddress, cfg.Config.BindPort) }, waitForInit, "10s").Should(BeNil())
 
 		client, err := api.NewClient(api.DefaultConfig())
 		Expect(err).NotTo(HaveOccurred())
