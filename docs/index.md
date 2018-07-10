@@ -25,6 +25,9 @@ Gloo Connect is built on top of [Consul](https://github.com/hashicorp/consul) an
 * **Traffic control**: Rate limit, Transformation, Compression, Caching
 * **Networking**: HTTP routing, serverless
 
+## Documentation
+* [Getting Started](getting-started/README.md)
+
 Blogs & Demos
 -----
 * [Announcement Blog](https://medium.com/solo-io/)

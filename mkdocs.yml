@@ -5,6 +5,7 @@ pages:
       - Introduction: introduction/introduction.md
       - Overview: introduction/overview.md
       - Architecture: introduction/architecture.md
+    - Getting Started: getting-started/README.md
 repo_url: https://github.com/solo-io/gloo-connect
 site_author: gloo Project Authors
 copyright: © Copyright 2018, solo.io Inc.
