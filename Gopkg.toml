@@ -50,7 +50,7 @@
 
 [[override]]
   name = "github.com/solo-io/gloo"
-  revision = "68a6eb6cfb440f2fa765206edf8c82f666b6e1c3"
+  revision = "b43d39f189786e4963d454b39cfd3c2e3e375f44"
 
 # thanks dep
 [[override]]
