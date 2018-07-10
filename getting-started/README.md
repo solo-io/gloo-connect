@@ -10,6 +10,8 @@ Binaries that we will use:
 
 You can find all three binaries in the release bundle.
 
+*NOTE*: Consul 1.2.0 has a [known issue](https://github.com/hashicorp/consul/issues/4345) when 2 services are configured (as done in this guide). This will be fixed in version 1.2.1, that will be released soon. In the mean time you will need to compile consul from master or [download a precompiled version from our latest release](https://github.com/solo-io/gloo-connect/releases/download/v0.1.0/consul) (where the bug is fixed).
+
 ## Demo web µ-service
 
 In this guide we will run a demo µ-service to simulate a microservice with an HTTP interface. 
@@ -22,7 +24,7 @@ The service fails every other request, and we will use it to demonstrate L7 (htt
 Commands should be run in a terminal. cd to the folder containing this file. 
 The envoy and gloo-connect binarie should be either in this folder, or in your path.
 
-## Start and register a microservice
+## Start and register a µ-service
 
 Start your demo µ-service to run in the background:
 
