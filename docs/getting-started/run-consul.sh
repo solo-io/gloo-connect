@@ -1,3 +1,4 @@
+#!/bin/bash
 ENVOY_PATH=$(which envoy)
 GLOO_CONNECT_PATH=$(which gloo-connect)
 
