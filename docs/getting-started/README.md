@@ -57,7 +57,7 @@ Remember - As the microservice fails every other request, you will see a differe
 
 As you can see, when you curl the service multiple times it sometimes fails ☹. To overcome this, we can use gloo-connect layer 7 features and add a re-try:
 ```
-gloo-connect set service web --http --retries=3
+gloo-connect set service microsvc1 --http --retries=3
 ```
 
 This configures gloo and envoy, and instructs them to automatically re-try requests sent to the service up to 3 times.
